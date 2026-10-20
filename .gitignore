@@ -22,3 +22,12 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Originales sin optimizar (no se publican)
+.raw-assets/
+
+# Herramientas locales y brief interno (no se publican)
+.agents/
+.claude/
+skills-lock.json
+docs/BRIEF_GEMINI.md

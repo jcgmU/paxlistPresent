@@ -1,0 +1,161 @@
+---
+import Glyph from './parts/Glyph.astro';
+
+interface Props {
+  status?: string;
+  /** Dibuja el canal P2P entre iPads que describe ARQUITECTURA_V3.md. Apagado por defecto: cada iPad se muestra autónomo. */
+  p2p?: boolean;
+}
+
+const { status = 'Diseñado', p2p = false } = Astro.props;
+
+const zones = ['Purser', 'Pasillo A–D', 'Pasillo E–K'];
+const chips = ['Comanda', 'Comanda', 'Cierre NPS'];
+
+function horizontal() {
+  const cards = zones.map((z, i) => ({ z, x: 140 + i * 290, y: 150, w: 260, h: 280 }));
+  return {
+    id: 'h',
+    vb: [1120, 500],
+    tower: { x: 560, y: 40, lx: 592, ly1: 38, ly2: 60 },
+    instrument: [
+      { x: 10, y: 38, t: 'En vuelo · 35.000 pies', cls: 't-micro' },
+      { x: 10, y: 62, t: '10 h de vuelo', cls: 't-title' },
+    ],
+    link: { a: 'M560 58V72', b: 'M560 88V100', cx: 560, cy: 80 },
+    fuselage: { x: 10, y: 100, w: 1100, h: 380, rx: 190 },
+    proa: { x: 75, y: 294 },
+    cards,
+    chipsRow: false,
+    gaps: cards.slice(0, 2).map((c) => ({ path: `M${c.x + c.w} 290H${c.x + c.w + 30}`, lx: c.x + c.w + 15, ly: 280 })),
+  };
+}
+
+function vertical() {
+  const cardH = 222;
+  const cards = zones.map((z, i) => ({ z, x: 40, y: 185 + i * (cardH + 20), w: 340, h: cardH }));
+  const bottom = cards[2].y + cardH + 95;
+  return {
+    id: 'v',
+    vb: [420, bottom + 24],
+    tower: { x: 250, y: 44, lx: 278, ly1: 42, ly2: 64 },
+    instrument: [
+      { x: 10, y: 24, t: 'En vuelo · 35.000 pies', cls: 't-micro' },
+      { x: 10, y: 48, t: '10 h de vuelo', cls: 't-title' },
+    ],
+    link: { a: 'M250 62V72', b: 'M250 86V94', cx: 250, cy: 79 },
+    fuselage: { x: 10, y: 90, w: 400, h: bottom - 90, rx: 200 },
+    proa: { x: 210, y: 128 },
+    cards,
+    chipsRow: true,
+    gaps: cards.slice(0, 2).map((c) => ({ path: `M210 ${c.y + c.h}V${c.y + c.h + 20}`, lx: 224, ly: c.y + c.h + 14 })),
+  };
+}
+
+const layouts = [horizontal(), vertical()];
+const desc =
+  'Contorno del fuselaje de un avión en vuelo a 35.000 pies, sin conexión a tierra: la red externa está en 0 por ciento durante 10 horas de vuelo. Dentro hay tres iPads, uno por zona de cabina: Purser, Pasillo A a D y Pasillo E a K. Cada uno trabaja de forma autónoma con su propia base local SQLite cifrada con SQLCipher, un Flight Session Token válido hasta la hora estimada de llegada más 6 horas con clave pública guardada sin conexión, y una bandeja de salida local, el Transactional Outbox, donde se encolan las comandas tomadas en vuelo y los cierres de alertas NPS.' +
+  (p2p ? ' Los iPads además intercambian cambios entre sí por un canal P2P.' : ' En este diagrama no hay conexión entre los iPads.');
+---
+
+<figure class="dg" data-dg>
+  {
+    layouts.map((L) => (
+      <svg
+        class={L.id === 'h' ? 'dg-h' : 'dg-v'}
+        viewBox={`0 0 ${L.vb[0]} ${L.vb[1]}`}
+        role="img"
+        aria-labelledby={`dg-off-${L.id}-t dg-off-${L.id}-d`}
+      >
+        <title id={`dg-off-${L.id}-t`}>En vuelo, sin red externa, cada iPad opera de forma autónoma con su propia copia cifrada</title>
+        <desc id={`dg-off-${L.id}-d`}>{desc}</desc>
+
+        {/* Instrumento y enlace cortado con tierra */}
+        {L.instrument.map((it) => (
+          <text x={it.x} y={it.y} class={it.cls}>{it.t}</text>
+        ))}
+        <g class="rv">
+          <Glyph name="tower" x={L.tower.x} y={L.tower.y} />
+          <text x={L.tower.lx} y={L.tower.ly1} class="t-micro">Red externa</text>
+          <text x={L.tower.lx} y={L.tower.ly2} class="t-display">0 %</text>
+          <path d={L.link.a} class="ln" stroke-dasharray="3 5" />
+          <path d={L.link.b} class="ln" stroke-dasharray="3 5" />
+          <path
+            d={`M${L.link.cx - 6} ${L.link.cy - 6}L${L.link.cx + 6} ${L.link.cy + 6}M${L.link.cx + 6} ${L.link.cy - 6}L${L.link.cx - 6} ${L.link.cy + 6}`}
+            class="gl gl-warn"
+          />
+        </g>
+
+        {/* Fuselaje */}
+        <rect
+          x={L.fuselage.x}
+          y={L.fuselage.y}
+          width={L.fuselage.w}
+          height={L.fuselage.h}
+          rx={L.fuselage.rx}
+          class="n n-core"
+          style="fill: none"
+        />
+        <text x={L.proa.x} y={L.proa.y} class="t-micro t-mid">Proa</text>
+
+        {p2p &&
+          L.gaps.map((g) => (
+            <g>
+              <path d={g.path} class="ln" stroke-dasharray="3 4" />
+              <text x={g.lx} y={g.ly} class="t-micro t-mid">P2P</text>
+            </g>
+          ))}
+
+        {/* iPads */}
+        {L.cards.map((c, i) => (
+          <g>
+            <g class="rv" style={`--i:${i}`}>
+              <rect x={c.x} y={c.y} width={c.w} height={c.h} rx="14" class="n" />
+              <text x={c.x + 16} y={c.y + 24} class="t-micro">iPad</text>
+              <text x={c.x + c.w - 16} y={c.y + 24} class="t-micro t-end">{p2p ? 'Red P2P local' : 'Autónomo'}</text>
+              <text x={c.x + 16} y={c.y + 46} class="t-title">{c.z}</text>
+              <path d={`M${c.x + 16} ${c.y + 58}H${c.x + c.w - 16}`} class="ln-hair" />
+
+              <Glyph name="shield" x={c.x + 28} y={c.y + 80} />
+              <text x={c.x + 50} y={c.y + 76} class="t-rowb">SQLite + SQLCipher</text>
+              <text x={c.x + 50} y={c.y + 94} class="t-sub">Vuelo completo, cifrado y local</text>
+
+              <Glyph name="key" x={c.x + 28} y={c.y + 122} />
+              <text x={c.x + 50} y={c.y + 118} class="t-rowb">Flight Session Token</text>
+              <text x={c.x + 50} y={c.y + 136} class="t-sub">Válido hasta ETA + 6 h</text>
+              <text x={c.x + 50} y={c.y + 152} class="t-sub">Clave pública offline</text>
+
+              <Glyph name="tray" x={c.x + 28} y={c.y + 178} />
+              <text x={c.x + 50} y={c.y + 182} class="t-rowb">Outbox local</text>
+            </g>
+            {chips.map((label, k) => {
+              const cw = L.chipsRow ? (c.w - 32 - 16) / 3 : c.w - 32;
+              const cx = L.chipsRow ? c.x + 16 + k * (cw + 8) : c.x + 16;
+              const cy = L.chipsRow ? c.y + 194 : c.y + 194 + k * 28;
+              return (
+                <g class="rv" style={`--i:${5 + i + k}; --d:200ms`}>
+                  <rect x={cx} y={cy} width={cw} height="22" rx="6" class="n n-2" />
+                  <text x={cx + cw / 2} y={cy + 15} class="t-sub t-mid">{label}</text>
+                </g>
+              );
+            })}
+          </g>
+        ))}
+      </svg>
+    ))
+  }
+  <figcaption>
+    <span class="dg-chip">{status}</span>
+    <span>
+      {
+        p2p
+          ? 'Sin red externa, cada iPad lleva su copia cifrada del vuelo y comparte los cambios con los otros por P2P. Lo que registra queda en su Outbox hasta aterrizar.'
+          : 'Sin red externa, cada iPad trabaja solo con su propia copia cifrada del vuelo. Lo que registra queda en su Outbox hasta aterrizar.'
+      }
+    </span>
+  </figcaption>
+</figure>
+
+<script>
+  import '../../scripts/dg-reveal.ts';
+</script>

@@ -1,0 +1,308 @@
+/* Sistema compartido de los diagramas técnicos. Un SVG horizontal (.dg-h) y otro vertical (.dg-v)
+   por figura: el contenedor decide cuál se ve, para que el texto nunca se encoja en móvil. */
+
+.dg {
+  container-type: inline-size;
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.dg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.dg .dg-h {
+  display: none;
+}
+.dg .dg-v {
+  display: block;
+  max-width: 520px;
+  margin-inline: auto;
+}
+@container (min-width: 880px) {
+  .dg .dg-h {
+    display: block;
+  }
+  .dg .dg-v {
+    display: none;
+  }
+}
+
+.dg figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-top: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-2);
+  text-wrap: pretty;
+}
+
+.dg-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+.dg-chip--warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* Formas */
+.dg .n {
+  fill: var(--panel);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.dg .n-2 {
+  fill: var(--panel-2);
+}
+.dg .n-core {
+  stroke: var(--fg-3);
+}
+.dg .n-warn {
+  stroke: var(--warn);
+}
+.dg .n-hair {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.dg .n-dash {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 5;
+}
+.dg .ln {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dg .ln-hair {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.dg .ln-warn {
+  fill: none;
+  stroke: var(--warn);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+  stroke-linecap: round;
+}
+.dg .ln-live {
+  fill: none;
+  stroke: var(--brand-text);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 6 100;
+  stroke-dashoffset: 6;
+  opacity: 0;
+}
+.dg .gl {
+  fill: none;
+  stroke: var(--fg-2);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dg .gl-warn {
+  stroke: var(--warn);
+}
+.dg .gl-ok {
+  stroke: var(--ok);
+}
+.dg .fill-ink {
+  fill: var(--ink);
+}
+.dg .fill-panel-2 {
+  fill: var(--panel-2);
+}
+.dg .fill-warn {
+  fill: var(--warn);
+}
+.dg .fill-fg-3 {
+  fill: var(--fg-3);
+}
+.dg .ar {
+  fill: var(--fg-3);
+}
+.dg .ar-live {
+  fill: var(--brand-text);
+}
+
+/* Texto (unidades del viewBox: 1:1 en escritorio, ~0.93 en móvil) */
+.dg text {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.dg .t-title {
+  font-size: 15px;
+  font-weight: 600;
+  fill: var(--fg);
+}
+.dg .t-display {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  fill: var(--fg);
+}
+.dg .t-row {
+  font-size: 13px;
+  fill: var(--fg);
+}
+.dg .t-rowb {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--fg);
+}
+.dg .t-sub {
+  font-size: 12px;
+  fill: var(--fg-2);
+}
+.dg .t-micro {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  fill: var(--fg-3);
+}
+.dg .t-val {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--fg);
+}
+.dg .t-warn {
+  fill: var(--warn);
+}
+.dg .t-ok {
+  fill: var(--ok);
+}
+.dg .t-brand {
+  fill: var(--brand-text);
+}
+.dg .t-mid {
+  text-anchor: middle;
+}
+.dg .t-end {
+  text-anchor: end;
+}
+
+/* Entrada por visibilidad: una pasada, estado final estático. Sin JS todo se ve. */
+.dg[data-js]:not([data-play]) .rv {
+  opacity: 0;
+}
+.dg[data-play] .rv {
+  animation: dg-in 300ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms + var(--d, 0ms));
+}
+@keyframes dg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dg .rv-s {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+.dg[data-play] .rv-s {
+  animation-name: dg-scale;
+}
+@keyframes dg-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Paquetes de datos: un trazo que recorre la línea una sola vez */
+.dg[data-play] .ln-live {
+  animation: dg-flow 1.4s var(--ease-in-out) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes dg-flow {
+  0% {
+    stroke-dashoffset: 6;
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  94% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+}
+
+/* Cambio de valor (4 rest. → 3 rest.) */
+.dg .sw-b {
+  opacity: 0;
+}
+.dg[data-play] .sw-a {
+  animation: dg-out 200ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+.dg[data-play] .sw-b {
+  animation: dg-fade 200ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes dg-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dg-fade {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dg .rv,
+  .dg[data-js]:not([data-play]) .rv,
+  .dg[data-play] .rv {
+    animation: none;
+    opacity: 1;
+  }
+  .dg .ln-live {
+    display: none;
+  }
+  .dg .sw-a {
+    display: none;
+  }
+  .dg .sw-b {
+    opacity: 1;
+  }
+}

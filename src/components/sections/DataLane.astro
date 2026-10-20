@@ -1,0 +1,240 @@
+---
+import DiagramEmbark from '../diagrams/DiagramEmbark.astro';
+import DiagramFlightOffline from '../diagrams/DiagramFlightOffline.astro';
+import DiagramLandingReconcile from '../diagrams/DiagramLandingReconcile.astro';
+import DiagramSecurity from '../diagrams/DiagramSecurity.astro';
+
+const acts = [
+  {
+    id: 'acto-v',
+    n: 'Acto V',
+    kicker: 'En tierra, con conexión',
+    title: 'La tripulante ve un mapa. Detrás hay seis sistemas.',
+    lead: 'Un servicio intermedio, el BFF, consulta en paralelo el sistema de abordaje, las reservas, LifeMiles, Salesforce, catering y el roster, y entrega un solo paquete pequeño por vuelo. Si una fuente falla, el manifiesto sale igual.',
+    details: [
+      ['BFF en NestJS + PostgreSQL', 'Combina las respuestas de los seis sistemas y guarda en caché el resultado de cada vuelo: una sola consulta por vuelo a los sistemas legacy.'],
+      ['Circuit Breaker por adaptador', 'Cada fuente tiene su breaker. Con uno abierto, el BFF omite esa fuente y entrega una respuesta parcial en lugar de bloquearse.'],
+      ['Delta Sync menor a 200 KB', 'Descarga incremental con brotli dentro de la ventana de 10 a 15 minutos en tierra. Un contador por vuelo y marcas de borrado para quitar a quien no aborda.'],
+    ],
+    blocker: ['A1', 'Bloqueante: cómo llega el manifiesto. API del DCS (Amadeus) o mensajes PNL/ADL vía SITA. Define el adaptador y la estimación de la Fase 1.'],
+  },
+  {
+    id: 'acto-vi',
+    n: 'Acto VI',
+    kicker: 'En vuelo, sin red',
+    title: 'Diez horas sin internet. La cabina no se entera.',
+    lead: 'Al embarcar, cada iPad guarda el vuelo completo en una base de datos cifrada local. En el aire lee y escribe solo ahí, y los tres iPads comparten los cambios entre sí.',
+    details: [
+      ['SQLite + SQLCipher', 'Base de datos nativa y cifrada en el iPad, con la llave en el Keychain. Sin PowerSync ni RxDB: el patrón es descargar, operar local y subir.'],
+      ['Flight Session Token offline', 'JWT firmado, válido hasta la hora estimada de llegada más 6 horas, que la app valida sin red con la clave pública embebida. Cada acción queda atada a crewMemberId.'],
+      ['Sincronización P2P', 'Wi-Fi local en el A320 y Multipeer en el B787. El orden lo dictan relojes lógicos híbridos y las comandas se combinan sin conflictos. Por confirmar: aislamiento de clientes del Wi-Fi del A320 (A4) y access point del B787 (A5).'],
+    ],
+  },
+  {
+    id: 'acto-vii',
+    n: 'Acto VII',
+    kicker: 'Al aterrizar y recuperar señal',
+    title: 'Todo cuadra, y se sube una sola vez.',
+    lead: 'Cada iPad sube lo que originó. Si tres suben la misma comanda, el servidor la reconoce y queda una sola. Lo que falla se aparta para revisión, y al final el iPad borra los datos del vuelo.',
+    details: [
+      ['Transactional Outbox', 'Cada cambio se escribe en una cola local junto con el dato. Las réplicas recibidas por P2P no entran a la cola: cada iPad sube solo lo que originó.'],
+      ['Idempotencia en dos niveles', 'transactionId evita reprocesar un mismo envío ante reintentos HTTP. entityId identifica el hecho de negocio, de modo que varios envíos convergen en un solo registro.'],
+      ['sync_dead_letter', 'POST /sync/reconcile responde por transacción: aceptada, duplicada o rechazada. Lo rechazado o sin reintentos queda en la cola para revisión.'],
+    ],
+    blocker: ['A3', 'Por definir: el proceso de cierre de casos NPS en Salesforce, que habilita el worker de salida hacia el CRM.'],
+  },
+  {
+    id: 'acto-viii',
+    n: 'Acto VIII',
+    kicker: 'Confianza y privacidad',
+    title: 'Datos de salud y de viajeros, tratados como lo que son.',
+    lead: 'El manifiesto incluye nombres, viajero frecuente y solicitudes médicas. Solo entran iPads corporativos, la tripulante inicia sesión con su cuenta de Avianca y los datos desaparecen al terminar.',
+    details: [],
+  },
+];
+---
+
+<div class="lane-fade" aria-hidden="true"></div>
+<section class="lane scope-dark" aria-labelledby="lane-title">
+  <div class="wrap">
+    <header class="lane-head">
+      <h2 id="lane-title">El mismo vuelo, visto desde el dato.</h2>
+      <p class="lead">
+        Lo que sigue está diseñado, no implementado. Cada pieza lleva su estado y lo que falta por confirmar.
+      </p>
+    </header>
+
+    {
+      acts.map((a) => (
+        <article class="act" id={a.id} aria-labelledby={`${a.id}-t`}>
+          <header>
+            <h3 id={`${a.id}-t`}>{a.title}</h3>
+            <p class="act-k">{a.n} · {a.kicker}</p>
+            <p class="lead">{a.lead}</p>
+          </header>
+
+          {a.id === 'acto-v' && <DiagramEmbark />}
+          {a.id === 'acto-vi' && <DiagramFlightOffline p2p />}
+          {a.id === 'acto-vii' && <DiagramLandingReconcile />}
+          {a.id === 'acto-viii' && <DiagramSecurity />}
+
+          {a.details.length > 0 && (
+            <details class="ti">
+              <summary>
+                <span>Detalle para TI</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+              </summary>
+              <dl>
+                {a.details.map(([t, d]) => (
+                  <div>
+                    <dt>{t}</dt>
+                    <dd>{d}</dd>
+                  </div>
+                ))}
+              </dl>
+              {a.blocker && (
+                <p class="blocker">
+                  <span class="tag">{a.blocker[0]}</span>
+                  {a.blocker[1]}
+                </p>
+              )}
+            </details>
+          )}
+        </article>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .lane-fade {
+    height: 160px;
+    background: linear-gradient(to bottom, var(--ink), #0b0c0f);
+  }
+  .lane {
+    padding: 0 16px clamp(72px, 12vh, 140px);
+  }
+  .wrap {
+    margin: 0 auto;
+    max-width: 1240px;
+  }
+  .lane-head {
+    margin-bottom: clamp(64px, 10vh, 120px);
+    max-width: 760px;
+  }
+  .act-k {
+    margin: 0 0 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+  h2 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  h3 {
+    margin: 0 0 12px;
+    max-width: 24ch;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.4vw, 48px);
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  .lead {
+    margin: 0;
+    max-width: 62ch;
+    font-size: clamp(16px, 1.3vw, 19px);
+    line-height: 1.55;
+    color: var(--fg-2);
+  }
+  .act {
+    margin-bottom: clamp(96px, 14vh, 160px);
+  }
+  .act header {
+    margin-bottom: 40px;
+  }
+
+  .ti {
+    margin-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+  .ti summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 56px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+    color: var(--fg);
+  }
+  .ti summary::-webkit-details-marker {
+    display: none;
+  }
+  .ti summary svg {
+    color: var(--fg-3);
+    transition: transform 200ms var(--ease-out);
+  }
+  .ti[open] summary svg {
+    transform: rotate(180deg);
+  }
+  .ti dl {
+    display: grid;
+    gap: 24px;
+    margin: 8px 0 0;
+  }
+  @media (min-width: 880px) {
+    .ti dl {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 32px;
+    }
+  }
+  .ti dt {
+    margin-bottom: 6px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--fg);
+  }
+  .ti dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--fg-2);
+  }
+  .blocker {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 24px 0 8px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fg-2);
+  }
+  .tag {
+    flex: none;
+    padding: 2px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--warn);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ti summary svg {
+      transition: none;
+    }
+  }
+</style>

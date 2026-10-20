@@ -1,0 +1,253 @@
+---
+import Glyph from './parts/Glyph.astro';
+import Signal from './parts/Signal.astro';
+
+interface Props {
+  status?: string;
+}
+
+const { status = 'Diseñado' } = Astro.props;
+
+const zones = ['Purser', 'Pasillo A–D', 'Pasillo E–K'];
+const chips = ['Comanda', 'Comanda', 'Cierre NPS'];
+const responses = [
+  { t: 'aceptada', g: 'check' },
+  { t: 'duplicada', g: 'equals' },
+  { t: 'rechazada', g: 'cross' },
+] as const;
+
+function horizontal() {
+  const mid = 275;
+  const ip = zones.map((z, j) => ({ z, x: 40, y: 30 + 170 * j, w: 180, h: 150, cy: 105 + 170 * j, chip: { dx: 14, dy: 58, w: 152, step: 23 } }));
+  return {
+    id: 'h',
+    vb: [1120, 620],
+    headers: [
+      { x: 40, y: 18, t: 'Cabina · destino' },
+      { x: 280, y: 18, t: 'BFF' },
+      { x: 500, y: 18, t: 'Idempotencia en dos niveles' },
+      { x: 930, y: 18, t: 'Salidas' },
+    ],
+    ip,
+    sendStubs: ip.map((p) => `M220 ${p.cy}H250`),
+    sendBus: `M250 ${ip[0].cy}V${ip[2].cy}`,
+    sendTrunk: `M250 ${mid}H280`,
+    sendLive: ip.map((p) => `M220 ${p.cy}H250V${mid}H280`),
+    endpoint: { x: 280, y: 165, w: 180, h: 220 },
+    toFunnel: `M460 ${mid}H500`,
+    stages: ['500,190 600,212 600,338 500,360', '600,212 710,252 710,298 600,338'],
+    funnelChips: { x: 510, y: 241 },
+    stageLabels: [
+      { x: 500, lines: [{ t: 'Nivel 1', c: 't-micro', y: 140 }, { t: 'transactionId', c: 't-rowb', y: 158 }, { t: 'Mismo envío, una sola vez', c: 't-sub', y: 174 }] },
+      { x: 600, lines: [{ t: 'Nivel 2', c: 't-micro', y: 370 }, { t: 'entityId', c: 't-rowb', y: 388 }, { t: 'El mismo hecho de 3 iPads', c: 't-sub', y: 404 }] },
+    ],
+    toTile: `M710 ${mid}H740`,
+    tile: { x: 740, y: 235, w: 140, h: 80 },
+    outBus: [`M880 ${mid}H905`, 'M905 190V360'],
+    outStubs: ['M905 190H930', 'M905 360H930'],
+    outNodes: [
+      { x: 930, y: 150, w: 190, h: 80, t: 'Catering', s: ['Conciliación de inventario', 'y demanda de menús'] },
+      { x: 930, y: 320, w: 190, h: 80, t: 'Salesforce NPS', s: ['Cierre de casos de', 'recuperación de servicio'] },
+    ],
+    dead: { x: 280, y: 470, w: 180, h: 64 },
+    deadLine: 'M370 385V470',
+    deadLabel: { x: 382, y: 432, t: 'Falló validación o agotó reintentos', a: 'start' },
+    purge: `M860 315V575H16V${ip[0].cy}H40`,
+    purgeBranches: ip.slice(1).map((p) => `M16 ${p.cy}H40`),
+    purgeLabel: { x: 450, y: 565, t: 'Orden de purga tras el reconcile', a: 'middle' },
+  };
+}
+
+function vertical() {
+  const ip = zones.map((z, j) => {
+    const x = 40 + j * 118;
+    return { z, x, y: 60, w: 104, h: 160, cx: x + 52, cy: 60, chip: { dx: 10, dy: 54, w: 84, step: 22 } };
+  });
+  return {
+    id: 'v',
+    vb: [420, 934],
+    headers: [{ x: 40, y: 14, t: 'Cabina · destino' }],
+    ip,
+    sendStubs: ip.map((p) => `M${p.cx} 220V244`),
+    sendBus: `M${ip[0].cx} 244H${ip[2].cx}`,
+    sendTrunk: 'M210 244V276',
+    sendLive: ip.map((p) => `M${p.cx} 220V244H210V276`),
+    endpoint: { x: 40, y: 276, w: 340, h: 130 },
+    toFunnel: 'M210 406V430',
+    stages: ['40,430 380,430 340,500 80,500', '80,500 340,500 260,570 160,570'],
+    funnelChips: null,
+    stageLabels: [
+      { x: 210, lines: [{ t: 'Nivel 1 · transactionId', c: 't-rowb t-mid', y: 458 }, { t: 'Mismo envío, una sola vez', c: 't-sub t-mid', y: 476 }] },
+      { x: 210, lines: [{ t: 'Nivel 2 · entityId', c: 't-rowb t-mid', y: 524 }, { t: 'El mismo hecho', c: 't-sub t-mid', y: 542 }] },
+    ],
+    toTile: 'M210 570V600',
+    tile: { x: 140, y: 600, w: 140, h: 64 },
+    outBus: ['M210 664V690', 'M122 690H297'],
+    outStubs: ['M122 690V720', 'M297 690V720'],
+    outNodes: [
+      { x: 40, y: 720, w: 165, h: 96, t: 'Catering', s: ['Conciliación de', 'inventario y demanda'] },
+      { x: 215, y: 720, w: 165, h: 96, t: 'Salesforce NPS', s: ['Cierre de casos', 'de recuperación'] },
+    ],
+    dead: { x: 40, y: 846, w: 340, h: 64 },
+    deadLine: 'M40 341H16V878H40',
+    deadLabel: null,
+    purge: 'M280 632H404V36H92V60',
+    purgeBranches: [210, 328].map((cx) => `M${cx} 36V60`),
+    purgeLabel: { x: 404, y: 26, t: 'Orden de purga tras el reconcile', a: 'end' },
+  };
+}
+
+const layouts = [horizontal(), vertical()];
+const desc =
+  'Al aterrizar y recuperar señal, los tres iPads (Purser, Pasillo A a D y Pasillo E a K) envían su bandeja de salida local al endpoint POST /sync/reconcile del BFF. El BFF responde por transacción: aceptada, duplicada o rechazada. Las comandas pasan por un embudo de idempotencia en dos niveles, primero transactionId contra reintentos HTTP y luego entityId contra el mismo hecho de negocio enviado por varios iPads, de modo que tres envíos iguales convergen en un registro único. Lo que falla la validación o agota los reintentos va a la cola Para revisión, sync_dead_letter. El registro único se despacha a Catering para conciliar inventario y demanda, y a Salesforce NPS para cerrar los casos de recuperación de servicio. Al terminar, el BFF envía la orden de purga y cada iPad borra los datos del vuelo.';
+---
+
+<figure class="dg" data-dg>
+  {
+    layouts.map((L) => (
+      <svg
+        class={L.id === 'h' ? 'dg-h' : 'dg-v'}
+        viewBox={`0 0 ${L.vb[0]} ${L.vb[1]}`}
+        role="img"
+        aria-labelledby={`dg-rec-${L.id}-t dg-rec-${L.id}-d`}
+      >
+        <title id={`dg-rec-${L.id}-t`}>Al aterrizar, tres envíos iguales convergen en un registro único y los iPads purgan los datos del vuelo</title>
+        <desc id={`dg-rec-${L.id}-d`}>{desc}</desc>
+        <defs>
+          <marker id={`dg-rec-${L.id}-ar`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M1 1.5L9 5L1 8.5Z" class="ar" />
+          </marker>
+        </defs>
+
+        {L.headers.map((hd) => (
+          <text x={hd.x} y={hd.y} class="t-micro">{hd.t}</text>
+        ))}
+
+        {/* Conexiones (debajo de los nodos) */}
+        {L.sendStubs.map((d) => (
+          <path d={d} class="ln" />
+        ))}
+        <path d={L.sendBus} class="ln" />
+        <path d={L.sendTrunk} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        <path d={L.toFunnel} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        <path d={L.toTile} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        {L.outBus.map((d) => (
+          <path d={d} class="ln" />
+        ))}
+        {L.outStubs.map((d) => (
+          <path d={d} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        ))}
+        <path d={L.deadLine} class="ln-warn" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        <path d={L.purge} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        {L.purgeBranches.map((d) => (
+          <path d={d} class="ln" marker-end={`url(#dg-rec-${L.id}-ar)`} />
+        ))}
+        <text x={L.purgeLabel.x} y={L.purgeLabel.y} class={`t-sub ${L.purgeLabel.a === 'middle' ? 't-mid' : L.purgeLabel.a === 'end' ? 't-end' : ''}`}>{L.purgeLabel.t}</text>
+
+        {/* Paquetes: una pasada hacia el BFF */}
+        {L.sendLive.map((d, j) => (
+          <path d={d} class="ln-live" pathLength="100" style={`--d:${700 + j * 130}ms`} />
+        ))}
+
+        {/* iPads con señal y Outbox */}
+        {L.ip.map((p, j) => (
+          <g>
+            <g class="rv" style={`--i:${j}`}>
+              <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="14" class="n" />
+              <text x={p.x + (L.id === 'h' ? 14 : 10)} y={p.y + (L.id === 'h' ? 22 : 20)} class="t-micro">iPad</text>
+              <text x={p.x + (L.id === 'h' ? 14 : 10)} y={p.y + (L.id === 'h' ? 42 : 40)} class={L.id === 'h' ? 't-title' : 't-rowb'}>{p.z}</text>
+              {L.id === 'h' && <text x={p.x + p.w - 42} y={p.y + 28} class="t-micro t-end">Con señal</text>}
+            </g>
+            <Signal x={p.x + p.w - (L.id === 'h' ? 35 : 33)} y={p.y + (L.id === 'h' ? 30 : 22)} step={2 + j * 2} />
+            {chips.map((label, k) => (
+              <g class="rv" style={`--i:${3 + j + k}`}>
+                <rect x={p.x + p.chip.dx} y={p.y + p.chip.dy + k * p.chip.step} width={p.chip.w} height="18" rx="5" class="n n-2" />
+                <text x={p.x + p.chip.dx + p.chip.w / 2} y={p.y + p.chip.dy + k * p.chip.step + 13} class="t-sub t-mid">{label}</text>
+              </g>
+            ))}
+            <g class="rv" style="--d:3600ms">
+              <Glyph name="check" x={p.x + (L.id === 'h' ? 24 : 18)} y={p.y + p.h - 18} tone="ok" />
+              <text x={p.x + (L.id === 'h' ? 38 : 30)} y={p.y + p.h - 14} class="t-sub">{L.id === 'h' ? 'Vuelo purgado' : 'Purgado'}</text>
+            </g>
+          </g>
+        ))}
+
+        {/* Endpoint del BFF */}
+        <g class="rv" style="--i:6">
+          <rect x={L.endpoint.x} y={L.endpoint.y} width={L.endpoint.w} height={L.endpoint.h} rx="12" class="n n-core" />
+          <text x={L.endpoint.x + 16} y={L.endpoint.y + 34} class="t-display">BFF</text>
+          <text x={L.endpoint.x + 16} y={L.endpoint.y + 56} class="t-rowb">POST /sync/reconcile</text>
+          <path d={`M${L.endpoint.x + 16} ${L.endpoint.y + 70}H${L.endpoint.x + L.endpoint.w - 16}`} class="ln-hair" />
+          <text x={L.endpoint.x + 16} y={L.endpoint.y + 92} class="t-sub">Respuesta por transacción</text>
+          {responses.map((r, i) => {
+            const horiz = L.id === 'v';
+            const rx = horiz ? L.endpoint.x + 26 + i * 108 : L.endpoint.x + 26;
+            const ry = horiz ? L.endpoint.y + 112 : L.endpoint.y + 120 + i * 28;
+            return (
+              <g>
+                <Glyph name={r.g} x={rx} y={ry} tone={r.g === 'check' ? 'ok' : r.g === 'cross' ? 'warn' : undefined} />
+                <text x={rx + 14} y={ry + 4} class="t-row">{r.t}</text>
+              </g>
+            );
+          })}
+        </g>
+
+        {/* Embudo de idempotencia */}
+        <g class="rv" style="--i:8">
+          {L.stages.map((pts) => (
+            <polygon points={pts} class="n" stroke-linejoin="round" />
+          ))}
+          {L.funnelChips &&
+            [0, 1, 2].map((k) => (
+              <g>
+                <rect x={L.funnelChips.x} y={L.funnelChips.y + k * 25} width="76" height="18" rx="5" class="n n-2" />
+                <text x={L.funnelChips.x + 38} y={L.funnelChips.y + k * 25 + 13} class="t-sub t-mid">Comanda</text>
+              </g>
+            ))}
+          {L.stageLabels.map((sl) =>
+            sl.lines.map((ln) => (
+              <text x={sl.x} y={ln.y} class={ln.c}>{ln.t}</text>
+            )),
+          )}
+        </g>
+
+        {/* Registro único y salidas */}
+        <g class="rv" style="--i:10">
+          <rect x={L.tile.x} y={L.tile.y} width={L.tile.w} height={L.tile.h} rx="12" class="n n-core" />
+          <text x={L.tile.x + 16} y={L.tile.y + L.tile.h / 2 - 3} class="t-title">Registro único</text>
+          <text x={L.tile.x + 16} y={L.tile.y + L.tile.h / 2 + 15} class="t-sub">3 recibidos → 1</text>
+        </g>
+        {L.outNodes.map((n, i) => (
+          <g class="rv" style={`--i:${11 + i}`}>
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="10" class="n" />
+            <text x={n.x + 16} y={n.y + 28} class="t-title">{n.t}</text>
+            {n.s.map((line, k) => (
+              <text x={n.x + 16} y={n.y + 48 + k * 16} class="t-sub">{line}</text>
+            ))}
+          </g>
+        ))}
+
+        {/* Cola de contingencia */}
+        <g class="rv" style="--i:13">
+          <rect x={L.dead.x} y={L.dead.y} width={L.dead.w} height={L.dead.h} rx="10" class="n n-warn" />
+          <text x={L.dead.x + 16} y={L.dead.y + 26} class="t-title">Para revisión</text>
+          <text x={L.dead.x + 16} y={L.dead.y + 46} class="t-sub">
+            {L.id === 'h' ? 'sync_dead_letter' : 'sync_dead_letter · falló validación o agotó reintentos'}
+          </text>
+        </g>
+        {L.deadLabel && <text x={L.deadLabel.x} y={L.deadLabel.y} class="t-sub t-warn">{L.deadLabel.t}</text>}
+      </svg>
+    ))
+  }
+  <figcaption>
+    <span class="dg-chip">{status}</span>
+    <span>
+      Cada iPad sube lo que originó. Si tres suben la misma comanda, el servidor la reconoce y queda una sola vez; lo que
+      falla se aparta para revisión y, al terminar, el iPad borra los datos del vuelo.
+    </span>
+  </figcaption>
+</figure>
+
+<script>
+  import '../../scripts/dg-reveal.ts';
+</script>

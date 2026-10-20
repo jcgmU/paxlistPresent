@@ -1,0 +1,130 @@
+---
+---
+
+<header class="site-header">
+  <a class="brand" href="#inicio" aria-label="Avianca SeatMap Pro, ir al inicio">
+    <img src="/avianca-symbol.png" alt="" width="32" height="32" class="brand-symbol" />
+    <img src="/avianca-wordmark.png" alt="Avianca" height="18" class="brand-wordmark" />
+    <span class="brand-product">SeatMap Pro</span>
+  </a>
+
+  <button type="button" class="theme-btn" data-theme-toggle aria-label="Cambiar a modo claro">
+    <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+    </svg>
+    <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"></path>
+    </svg>
+  </button>
+</header>
+
+<style>
+  .site-header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding-inline: 16px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--ink) 86%, transparent);
+    backdrop-filter: blur(18px);
+  }
+  @media (min-width: 768px) {
+    .site-header {
+      padding-inline: 32px;
+    }
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .brand-symbol {
+    height: 32px;
+    width: 32px;
+    object-fit: contain;
+  }
+  .brand-wordmark {
+    height: 18px;
+    width: auto;
+    object-fit: contain;
+  }
+  .brand-product {
+    display: none;
+    padding-left: 8px;
+    border-left: 1px solid var(--line-strong);
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fg-2);
+    white-space: nowrap;
+  }
+  @media (min-width: 640px) {
+    .brand-product {
+      display: inline;
+    }
+  }
+  .theme-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-2);
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
+  }
+  .theme-btn:active {
+    transform: scale(0.97);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .theme-btn:hover {
+      background: color-mix(in srgb, var(--fg) 6%, transparent);
+    }
+  }
+  .icon-moon {
+    display: none;
+  }
+  :global(:root[data-theme='light']) .icon-sun {
+    display: none;
+  }
+  :global(:root[data-theme='light']) .icon-moon {
+    display: block;
+  }
+</style>
+
+<script>
+  const root = document.documentElement;
+  const btn = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+
+  function sync() {
+    const light = root.getAttribute('data-theme') === 'light';
+    btn?.setAttribute('aria-label', light ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro');
+    document.querySelectorAll<HTMLElement>('[data-theme-name]').forEach((el) => {
+      el.textContent = light ? 'Claro · #f3f1ee' : 'Oscuro · #0b0c0f';
+    });
+  }
+
+  btn?.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('theme', next);
+    } catch {}
+    sync();
+  });
+
+  sync();
+</script>

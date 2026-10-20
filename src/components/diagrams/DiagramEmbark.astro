@@ -1,0 +1,229 @@
+---
+import Breaker from './parts/Breaker.astro';
+
+interface Props {
+  status?: string;
+}
+
+const { status = 'Diseñado' } = Astro.props;
+
+const sources = [
+  { t: 'DCS Abordaje', s: 'Manifiesto · asientos · INF' },
+  { t: 'GDS / PNR', s: 'Reservas · SSR' },
+  { t: 'LifeMiles CRM', s: 'Estatus Elite' },
+  { t: 'Salesforce NPS', s: 'Incidencias 48–72 h', degraded: true },
+  { t: 'Catering', s: 'Inventario por galley' },
+  { t: 'Crew Rostering', s: 'Roles y zonas' },
+];
+const zones = ['Purser', 'Pasillo A–D', 'Pasillo E–K'];
+const bffRows = ['Agregador en paralelo', 'Breaker por adaptador', 'Caché por vuelo', 'Delta Sync + brotli'];
+
+function horizontal() {
+  const cyMid = 269;
+  const src = sources.map((s, i) => {
+    const y = 48 + i * 76;
+    const cy = y + 31;
+    return { ...s, x: 0, y, w: 240, h: 62, cy, bx: 285, stub: `M240 ${cy}H330`, live: `M240 ${cy}H330V${cyMid}H470` };
+  });
+  const ip = zones.map((z, j) => {
+    const y = 50 + j * 154;
+    const cy = y + 65;
+    return { z, x: 900, y, w: 220, h: 130, cy, stub: `M830 ${cy}H900`, live: `M690 ${cyMid}H830V${cy}H900`, arrow: [900, cy] };
+  });
+  return {
+    id: 'h',
+    vb: [1120, 620],
+    headers: [
+      { x: 0, y: 24, t: 'Sistemas de Avianca' },
+      { x: 470, y: 24, t: 'Servicio intermedio' },
+      { x: 900, y: 24, t: 'Cabina · en tierra' },
+    ],
+    src,
+    bus: `M330 ${src[0].cy}V${src[5].cy}`,
+    trunkIn: `M330 ${cyMid}H470`,
+    trunkInLabel: { x: 400, y: cyMid - 12, t: '1 consulta por vuelo' },
+    bff: { x: 470, y: 119, w: 220, h: 300, rowGap: 42 },
+    trunkOut: `M690 ${cyMid}H830`,
+    trunkOutLabel: { x: 760, y: cyMid - 12, t: '< 200 KB · brotli' },
+    outBus: `M830 ${ip[0].cy}V${ip[2].cy}`,
+    ip,
+    ipChip: { y: 80 },
+    ruler: { path: 'M470 548V564M470 556H1120M1120 548V564', lx: 795, ly: 584, t: 'Ventana en tierra: 10–15 min', anchor: 'middle' },
+    note: { x: 795, y: 604, t: 'Delta Sync en vivo: el plato pasa de 4 a 3 rest. en las tres tablets' },
+    legend: { x: 0, y: 548 },
+    mainArrowIn: [470, cyMid],
+  };
+}
+
+function vertical() {
+  const cyMid = 440;
+  const bffH = 210;
+  const bffY = 470;
+  const outY = bffY + bffH;
+  const busY = outY + 50;
+  const ipY = busY + 40;
+  const src = sources.map((s, i) => {
+    const y = 28 + i * 62;
+    const cy = y + 26;
+    return { ...s, x: 0, y, w: 340, h: 52, cy, bx: 366, stub: `M340 ${cy}H392`, live: `M340 ${cy}H392V${cyMid}H210V${bffY}` };
+  });
+  const ip = zones.map((z, j) => {
+    const x = 15 + j * 133;
+    const cx = x + 62;
+    return { z, x, y: ipY, w: 124, h: 150, cy: ipY, stub: `M${cx} ${busY}V${ipY}`, live: `M210 ${outY}V${busY}H${cx}V${ipY}`, arrow: [cx, ipY] };
+  });
+  return {
+    id: 'v',
+    vb: [420, ipY + 330],
+    headers: [{ x: 0, y: 14, t: 'Sistemas de Avianca' }],
+    src,
+    bus: `M392 ${src[0].cy}V${cyMid}H210V${bffY}`,
+    trunkIn: '',
+    trunkInLabel: { x: 301, y: cyMid - 10, t: '1 consulta por vuelo', anchor: 'middle' },
+    bff: { x: 20, y: bffY, w: 380, h: bffH, rowGap: 22 },
+    trunkOut: `M210 ${outY}V${busY}`,
+    trunkOutLabel: { x: 222, y: outY + 30, t: '< 200 KB · brotli', anchor: 'start' },
+    outBus: `M75 ${busY}H345`,
+    ip,
+    ipChip: { y: 100 },
+    ruler: { path: `M15 ${ipY + 168}V${ipY + 184}M15 ${ipY + 176}H405M405 ${ipY + 168}V${ipY + 184}`, lx: 210, ly: ipY + 206, t: 'Ventana en tierra: 10–15 min', anchor: 'middle' },
+    note: { x: 210, y: ipY + 226, t: 'Delta Sync en vivo: el plato pasa de 4 a 3 rest.' },
+    legend: { x: 0, y: ipY + 262 },
+    mainArrowIn: [210, bffY],
+  };
+}
+
+const layouts = [horizontal(), vertical()];
+const desc =
+  'Seis sistemas de Avianca (DCS de abordaje, GDS y PNR, LifeMiles, Salesforce NPS, catering y crew rostering) alimentan un servicio intermedio, el BFF, que combina sus respuestas en paralelo con un breaker por sistema y las guarda en caché una vez por vuelo. En el ejemplo, Salesforce NPS está degradado: su breaker está abierto y el BFF entrega el manifiesto sin alertas NPS. Durante la ventana de 10 a 15 minutos en tierra, el BFF envía a los tres iPads un paquete de menos de 200 KB comprimido con brotli y un Delta Sync actualiza el inventario del plato de 4 a 3 restantes en las tres tablets.';
+---
+
+<figure class="dg" data-dg>
+  {
+    layouts.map((L) => (
+      <svg
+        class={L.id === 'h' ? 'dg-h' : 'dg-v'}
+        viewBox={`0 0 ${L.vb[0]} ${L.vb[1]}`}
+        role="img"
+        aria-labelledby={`dg-embark-${L.id}-t dg-embark-${L.id}-d`}
+      >
+        <title id={`dg-embark-${L.id}-t`}>Seis sistemas de Avianca convergen en el BFF y este alimenta a tres iPads en tierra</title>
+        <desc id={`dg-embark-${L.id}-d`}>{desc}</desc>
+        <defs>
+          <marker id={`dg-embark-${L.id}-ar`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M1 1.5L9 5L1 8.5Z" class="ar" />
+          </marker>
+        </defs>
+
+        {L.headers.map((hd) => (
+          <text x={hd.x} y={hd.y} class="t-micro">{hd.t}</text>
+        ))}
+
+        {/* Fuentes y breakers */}
+        {L.src.map((s, i) => (
+          <g class="rv" style={`--i:${i}`}>
+            <rect x={s.x} y={s.y} width={s.w} height={s.h} rx="10" class:list={['n', { 'n-warn': s.degraded }]} />
+            <text x={s.x + 16} y={s.y + s.h / 2 - 3} class="t-title">{s.t}</text>
+            <text x={s.x + 16} y={s.y + s.h / 2 + 14} class="t-sub">{s.s}</text>
+            {s.degraded && (
+              <text x={s.x + s.w - 14} y={s.y + 18} class="t-micro t-warn t-end">Degradado</text>
+            )}
+          </g>
+        ))}
+        {L.src.map((s) => (
+          <path d={s.stub} class={s.degraded ? 'ln-warn' : 'ln'} />
+        ))}
+        <path d={L.bus} class="ln" />
+        {L.trunkIn && <path d={L.trunkIn} class="ln" marker-end={`url(#dg-embark-${L.id}-ar)`} />}
+        {!L.trunkIn && (
+          <path d={`M210 ${L.bff.y - 14}V${L.bff.y - 1}`} class="ln" marker-end={`url(#dg-embark-${L.id}-ar)`} />
+        )}
+        {L.src.map((s) => (
+          <Breaker cx={s.bx} cy={s.cy} state={s.degraded ? 'open' : 'ok'} />
+        ))}
+        <text x={L.trunkInLabel.x} y={L.trunkInLabel.y} class="t-sub t-mid">{L.trunkInLabel.t}</text>
+
+        {/* BFF */}
+        <g class="rv" style="--i:6">
+          <rect x={L.bff.x} y={L.bff.y} width={L.bff.w} height={L.bff.h} rx="12" class="n n-core" />
+          <text x={L.bff.x + 18} y={L.bff.y + 34} class="t-display">BFF</text>
+          <text x={L.bff.x + 18} y={L.bff.y + 56} class="t-sub">NestJS + PostgreSQL</text>
+          <path d={`M${L.bff.x + 18} ${L.bff.y + 72}H${L.bff.x + L.bff.w - 18}`} class="ln-hair" />
+          {bffRows.map((r, i) => (
+            <g>
+              <rect x={L.bff.x + 18} y={L.bff.y + 90 + i * L.bff.rowGap - 8} width="7" height="7" class="gl" />
+              <text x={L.bff.x + 34} y={L.bff.y + 90 + i * L.bff.rowGap} class="t-row">{r}</text>
+            </g>
+          ))}
+          <path
+            d={`M${L.bff.x + 18} ${L.bff.y + L.bff.h - 60}H${L.bff.x + L.bff.w - 18}`}
+            class="ln-hair"
+          />
+          <path
+            d={`M${L.bff.x + 22} ${L.bff.y + L.bff.h - 29}L${L.bff.x + 28} ${L.bff.y + L.bff.h - 39}L${L.bff.x + 34} ${L.bff.y + L.bff.h - 29}Z`}
+            class="gl gl-warn"
+          />
+          <text x={L.bff.x + 44} y={L.bff.y + L.bff.h - 36} class="t-sub t-warn">Entrega parcial:</text>
+          <text x={L.bff.x + 44} y={L.bff.y + L.bff.h - 20} class="t-sub t-warn">sin alertas NPS</text>
+        </g>
+
+        {/* Salida hacia los iPads */}
+        <path d={L.trunkOut} class="ln" />
+        <path d={L.outBus} class="ln" />
+        {L.ip.map((p) => (
+          <path d={p.stub} class="ln" marker-end={`url(#dg-embark-${L.id}-ar)`} />
+        ))}
+        <text x={L.trunkOutLabel.x} y={L.trunkOutLabel.y} class={`t-sub ${L.trunkOutLabel.anchor === 'start' ? '' : 't-mid'}`}>{L.trunkOutLabel.t}</text>
+
+        {/* Flujo en vivo: una pasada */}
+        {L.src.map((s, i) =>
+          s.degraded ? null : (
+            <path d={s.live} class="ln-live" pathLength="100" style={`--d:${i * 110}ms`} />
+          ),
+        )}
+        {L.ip.map((p, j) => (
+          <path d={p.live} class="ln-live" pathLength="100" style={`--d:${1500 + j * 140}ms`} />
+        ))}
+
+        {/* iPads */}
+        {L.ip.map((p, j) => (
+          <g class="rv" style={`--i:${7 + j}`}>
+            <rect x={p.x} y={p.y} width={p.w} height={p.h} rx="14" class="n" />
+            <text x={p.x + 14} y={p.y + 22} class="t-micro">iPad</text>
+            <text x={p.x + 14} y={p.y + 42} class="t-title">{p.z}</text>
+            <path d={`M${p.x + 17} ${p.y + 62}L${p.x + 21} ${p.y + 66}L${p.x + 28} ${p.y + 57}`} class="gl gl-ok" />
+            <text x={p.x + 36} y={p.y + 65} class="t-sub">Manifiesto</text>
+            <rect x={p.x + 12} y={p.y + L.ipChip.y + 0} width={p.w - 24} height="36" rx="8" class="n n-2" />
+            <text x={p.x + 24} y={p.y + L.ipChip.y + 23} class="t-sub">Plato</text>
+            <text x={p.x + p.w - 24} y={p.y + L.ipChip.y + 23} class="t-val t-end sw-a" style="--d:2600ms">4 rest.</text>
+            <text x={p.x + p.w - 24} y={p.y + L.ipChip.y + 23} class="t-val t-end t-brand sw-b" style="--d:2600ms">3 rest.</text>
+          </g>
+        ))}
+
+        {/* Ventana en tierra */}
+        <path d={L.ruler.path} class="ln" />
+        <text x={L.ruler.lx} y={L.ruler.ly} class="t-title t-mid">{L.ruler.t}</text>
+        <text x={L.note.x} y={L.note.y} class="t-sub t-mid">{L.note.t}</text>
+
+        {/* Leyenda: el mismo código se repite seis veces */}
+        <g transform={`translate(${L.legend.x} ${L.legend.y})`}>
+          <Breaker cx={22} cy={14} state="ok" />
+          <text x="50" y="18" class="t-sub">Breaker cerrado: el adaptador responde</text>
+          <Breaker cx={22} cy={44} state="open" />
+          <text x="50" y="48" class="t-sub">Breaker abierto: el BFF omite la fuente y sigue</text>
+        </g>
+      </svg>
+    ))
+  }
+  <figcaption>
+    <span class="dg-chip">{status}</span>
+    <span>
+      El BFF consulta en paralelo seis sistemas, con un breaker por cada uno, y entrega un paquete pequeño por vuelo. Si
+      uno cae, el manifiesto sale igual, solo sin esa fuente.
+    </span>
+  </figcaption>
+</figure>
+
+<script>
+  import '../../scripts/dg-reveal.ts';
+</script>

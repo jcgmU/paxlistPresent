@@ -1,0 +1,189 @@
+---
+---
+
+<section id="inicio" class="hero scope-dark" data-hero aria-labelledby="hero-title">
+  <div class="hero-pin">
+    <div class="hero-media" data-media>
+      <img class="hero-still" src="/fotos/foto-2.webp" alt="" width="1672" height="941" />
+      <video
+        class="hero-video"
+        data-video
+        muted
+        playsinline
+        preload="auto"
+        poster="/fotos/foto-1.webp"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <source src="/videos/hero-scroll.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+
+    <div class="hero-copy" data-copy>
+      <h1 id="hero-title">Toda la cabina, de un vistazo.</h1>
+      <p class="hero-sub">Mismos datos. Otra forma de leerlos.</p>
+      <p class="hero-chip"><span aria-hidden="true">[</span> Construido <span aria-hidden="true">]</span></p>
+      <p class="hero-hint" data-hint>
+        Desliza para recorrer el vuelo
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+      </p>
+    </div>
+
+    <div class="hero-portal" data-portal aria-hidden="true">
+      <div class="portal-black"></div>
+      <div class="portal-studio studio-bg" data-studio></div>
+    </div>
+
+    <p class="sr-only">
+      Ilustración: una tripulante de cabina en la cabina Business baja un manifiesto en papel y levanta un iPad con la pantalla en negro.
+    </p>
+  </div>
+</section>
+
+<noscript>
+  <style>
+    .hero {
+      height: 100svh;
+    }
+  </style>
+</noscript>
+
+<style>
+  .hero {
+    position: relative;
+    height: 520svh;
+    background: #0b0c0f;
+  }
+  .hero-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  .hero-media {
+    position: absolute;
+    inset: 0;
+    transform-origin: 46% 56%;
+  }
+  .hero-video,
+  .hero-still {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hero-still {
+    display: none;
+  }
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgb(11 12 15 / 0.88) 0%, rgb(11 12 15 / 0.5) 38%, rgb(11 12 15 / 0) 70%);
+  }
+  @media (min-width: 900px) {
+    .hero-scrim {
+      background: linear-gradient(90deg, rgb(11 12 15 / 0.86) 0%, rgb(11 12 15 / 0.55) 34%, rgb(11 12 15 / 0) 62%);
+    }
+  }
+
+  .hero-copy {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: clamp(48px, 9vh, 120px);
+    max-width: 640px;
+    color: #f5f5f6;
+  }
+  @media (min-width: 900px) {
+    .hero-copy {
+      left: clamp(32px, 5vw, 88px);
+      right: auto;
+      max-width: 38vw;
+    }
+  }
+  .hero-chip {
+    display: inline-block;
+    margin: 20px 0 0;
+    padding: 6px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ok);
+    background: rgb(11 12 15 / 0.5);
+  }
+  .hero-chip span {
+    color: var(--fg-3);
+  }
+  h1 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(38px, 4.4vw, 76px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+  }
+  .hero-sub {
+    margin: 0;
+    font-size: clamp(17px, 1.5vw, 22px);
+    line-height: 1.4;
+    color: #c9ccd3;
+  }
+  .hero-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 28px 0 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9da3af;
+  }
+
+  .hero-portal {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: 50% 50%;
+    overflow: hidden;
+  }
+  .portal-black,
+  .portal-studio {
+    position: absolute;
+    inset: 0;
+  }
+  .portal-black {
+    background: #050506;
+  }
+  .portal-studio {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero {
+      height: auto;
+    }
+    .hero-pin {
+      position: relative;
+      min-height: 100svh;
+    }
+    .hero-video,
+    .hero-portal,
+    .hero-hint {
+      display: none;
+    }
+    .hero-still {
+      display: block;
+    }
+  }
+</style>
+
+<script>
+  import '../../scripts/hero.ts';
+</script>

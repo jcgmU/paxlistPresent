@@ -1,0 +1,1011 @@
+---
+import { AV026, stats, lensList } from '../../data/av026';
+import type { SeatData } from '../../data/av026';
+import Badge from './Badge.astro';
+
+const TIER_NAME = { magno: 'Magno', diamond: 'Diamond', gold: 'Gold' } as const;
+
+function seatLabel(s: SeatData) {
+  const parts = [`Asiento ${s.id}`, s.occupied ? 'ocupado' : 'libre'];
+  if (s.tier) parts.push(TIER_NAME[s.tier]);
+  if (s.codes.length) parts.push(`servicios ${s.codes.join(' ')}`);
+  if (s.nps) parts.push('alerta NPS');
+  return parts.join(', ');
+}
+
+const steps = [
+  { n: 1, nav: 'Mapa', title: 'Mapa y cabinas', text: 'El fuselaje del vuelo AV026 con su cabina Business, fila por fila.', origin: [] as string[] },
+  { n: 2, nav: 'Lealtad', title: 'Lealtad LifeMiles', text: 'Magno, Diamond y Gold se leen sin abrir nada: el color marca estatus y el icono lo confirma.', origin: ['Origen: LifeMiles CRM'] },
+  { n: 3, nav: 'Filtros', title: 'Filtros del mapa', text: 'INF, SSR y WCHR iluminan los asientos que coinciden y atenúan el resto.', origin: ['Origen: GDS / PNR'] },
+  { n: 4, nav: 'Servicio', title: 'Servicio y comandas', text: 'Recuperar un mal vuelo anterior y tomar la comanda sin contar platos.', origin: ['Origen: Salesforce NPS', 'Origen: Catering'] },
+];
+---
+
+<section id="producto" class="show" data-show aria-labelledby="show-title">
+  <div class="show-pin" data-stage>
+    <div class="show-backdrop studio-bg" aria-hidden="true"></div>
+    <h2 id="show-title" class="sr-only">El producto en cuatro pasos</h2>
+
+    <div class="show-device" data-device>
+      <div class="ui" data-ui data-step="1" data-lens="none">
+        <div class="ui-top">
+          <div class="ui-route">
+            <div>
+              <p class="ui-k">Origen</p>
+              <p class="ui-city">{AV026.origin}</p>
+            </div>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            <div>
+              <p class="ui-k">Destino</p>
+              <p class="ui-city">{AV026.destination}</p>
+            </div>
+          </div>
+          <dl class="ui-meta">
+            <div><dt>Vuelo</dt><dd>{AV026.flightNumber}</dd></div>
+            <div><dt>Avión</dt><dd>{AV026.aircraft}</dd></div>
+            <div><dt>Servicio</dt><dd>{AV026.service}</dd></div>
+          </dl>
+          <p class="ui-filter" data-filter-chip hidden></p>
+        </div>
+
+        <div class="ui-body">
+          <div class="ui-map">
+            <div class="fus" data-fus>
+              <div class="fus-glow" aria-hidden="true"></div>
+              {
+                AV026.cabins.map((cab, ci) => (
+                  <div class={`cabin cabin-${cab.cls}`}>
+                    {ci > 0 && (
+                      <div class="galley" aria-hidden="true">
+                        <span>Galley · puertas L2 / R2</span>
+                      </div>
+                    )}
+                    <p class="cab-label">{cab.label}</p>
+                    {cab.rows.map((r) => (
+                      <div class="row">
+                        <span class="row-n" aria-hidden="true">{r.row}</span>
+                        {r.seats.map((s) =>
+                          s === 'aisle' ? (
+                            <span class="aisle" aria-hidden="true" />
+                          ) : (
+                            <div
+                              class="seat"
+                              role="img"
+                              aria-label={seatLabel(s)}
+                              data-seat={s.id}
+                              data-occ={s.occupied ? '' : undefined}
+                              data-tier={s.tier}
+                              data-nps={s.nps ? '' : undefined}
+                              data-l={lensList(s)}
+                            >
+                              <span class="seat-id">{s.id}</span>
+                              {s.tier && <Badge kind={s.tier} />}
+                              {s.nps && (
+                                <>
+                                  <span class="nps-badge"><Badge kind="nps" /></span>
+                                  <span class="done-badge"><Badge kind="done" /></span>
+                                </>
+                              )}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <aside class="ui-panel" aria-label="Panel de estadísticas">
+            <section data-p="1">
+              <p class="ui-k">Cabina Business</p>
+              <p class="big">{stats.businessOccupied}<span> de {stats.businessSeats}</span></p>
+              <p class="ui-sub">asientos ocupados en 5 filas</p>
+              <ul class="legend">
+                <li><span class="sw sw-free"></span>Libre</li>
+                <li><span class="sw sw-occ"></span>Ocupado</li>
+              </ul>
+              <p class="ui-note">Debajo del galley continúa la cabina Plus.</p>
+            </section>
+
+            <section data-p="2">
+              <p class="ui-k">Estatus LifeMiles</p>
+              <ul class="tiers">
+                <li>
+                  <Badge kind="magno" />
+                  <div><strong>Magno</strong><span>{stats.magno.join(', ')}</span></div>
+                  <b>{stats.magno.length}</b>
+                </li>
+                <li>
+                  <Badge kind="diamond" />
+                  <div><strong>Diamond</strong><span>{stats.diamond.join(', ')}</span></div>
+                  <b>{stats.diamond.length}</b>
+                </li>
+                <li>
+                  <Badge kind="gold" />
+                  <div><strong>Gold</strong><span>{stats.gold.join(', ')}</span></div>
+                  <b>{stats.gold.length}</b>
+                </li>
+              </ul>
+            </section>
+
+            <section data-p="3">
+              <p class="ui-k">Filtros del mapa</p>
+              <div class="lenses" role="group" aria-label="Filtros del mapa">
+                <button type="button" class="lens" data-lens-btn="inf" aria-pressed="false"><span>INF</span><b>{stats.inf}</b></button>
+                <button type="button" class="lens" data-lens-btn="ssr" aria-pressed="false"><span>SSR</span><b>{stats.ssr}</b></button>
+                <button type="button" class="lens" data-lens-btn="wchr" aria-pressed="false"><span>WCHR</span><b>{stats.wchr}</b></button>
+              </div>
+              <ul class="legend" data-lens-legend>
+                <li><span class="sw sw-match"></span><span data-legend-match>Coincide</span></li>
+                <li><span class="sw sw-dim"></span>Otros</li>
+              </ul>
+            </section>
+
+            <section data-p="4">
+              <div class="nps" data-nps-card>
+                <p class="nps-head"><Badge kind="nps" /><strong>Alerta NPS · asiento {AV026.nps.seat}</strong></p>
+                <p class="ui-sub">{AV026.nps.comment}</p>
+                <button type="button" class="primary" data-attend aria-pressed="false">
+                  <span class="lbl-off">Atención ofrecida</span>
+                  <span class="lbl-on"><Badge kind="done" /> Atendido</span>
+                </button>
+              </div>
+              <div class="comanda">
+                <p class="ui-k">Comanda Business · plato fuerte</p>
+                <ul class="meals" role="group" aria-label="Plato fuerte">
+                  {
+                    AV026.meals.map((m, i) => (
+                      <li>
+                        <button type="button" class="meal" data-meal={i} data-stock={m.stock} aria-pressed="false">
+                          <span class="meal-name">{m.name}</span>
+                          <span class="rest"><span data-rest>{m.stock}</span> rest.</span>
+                        </button>
+                      </li>
+                    ))
+                  }
+                </ul>
+                <p class="ui-k">Kit de confort</p>
+                <div class="kit">
+                  {
+                    ['Pijama', 'Sleepers'].map((k) => (
+                      <div class="kit-row" role="group" aria-label={k}>
+                        <span>{k}</span>
+                        <div class="sizes">
+                          {AV026.kitSizes.map((sz) => (
+                            <button type="button" class="size" aria-pressed={sz === 'L/XL' ? 'true' : 'false'}>{sz}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <div class="show-caption scope-dark">
+      <div class="cap-main">
+        {
+          steps.map((s) => (
+            <div class="cap-text" data-cap={s.n} hidden={s.n !== 1}>
+              <p class="cap-step">
+                <span><span data-cap-n>{s.n}</span> / 4</span>
+                <em class="cap-state">Construido</em>
+                {s.origin.map((o) => (
+                  <span class="chip">{o}</span>
+                ))}
+              </p>
+              <h3>{s.title}</h3>
+              <p class="cap-desc">{s.text}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="cap-side">
+        <nav class="cap-nav" aria-label="Pasos del producto">
+          {
+            steps.map((s) => (
+              <button type="button" data-go={s.n} aria-current={s.n === 1 ? 'step' : undefined}>
+                <span class="cap-nav-n">{s.n}</span>
+                <span class="cap-nav-t">{s.nav}</span>
+              </button>
+            ))
+          }
+        </nav>
+        <p class="cap-note">Datos de demostración. Los orígenes indican de dónde vendrá cada dato en el diseño del backend.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .show {
+    position: relative;
+    height: 520svh;
+    background: #0b0c0f;
+  }
+  .show-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+  .show-backdrop {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Pantalla del iPad. En escritorio JS la ajusta al rectángulo de la pantalla de foto-3. */
+  .show-device {
+    position: absolute;
+    top: 76px;
+    left: 50%;
+    width: min(calc(100% - 32px), 560px);
+    transform: translateX(-50%);
+    overflow: hidden;
+    border: 10px solid #1b1d22;
+    border-radius: 30px;
+    background: var(--ink);
+    color: var(--fg);
+  }
+  @media (min-width: 1024px) {
+    .show-device {
+      top: var(--dy, 0);
+      left: var(--dx, 0);
+      width: var(--dw, 900px);
+      height: var(--dh, 596px);
+      transform: none;
+      border: 0;
+      border-radius: var(--dr, 20px);
+    }
+  }
+
+  /* Interfaz */
+  .ui {
+    --seat: 44px;
+    --gap: 8px;
+    --aisle: 28px;
+    --alert: #e11d48;
+    container-type: inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background:
+      radial-gradient(ellipse 60% 40% at 0% 0%, rgb(226 6 19 / 0.14), transparent 70%),
+      var(--ink);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  @media (max-width: 1023.98px) {
+    .ui-map {
+      --seat: clamp(22px, calc((100cqi - 50px) / 11.92), 34px);
+      --gap: calc(var(--seat) * 0.14);
+      --aisle: calc(var(--seat) * 0.5);
+    }
+    .cabin-business {
+      --seat: min(34px, calc((100cqi - 60px) / 6.7));
+      --gap: calc(var(--seat) * 0.14);
+      --aisle: calc(var(--seat) * 0.5);
+    }
+    .seat {
+      font-size: 10px;
+    }
+    .seat :global(.badge) {
+      width: 16px;
+      height: 16px;
+      top: -5px;
+      right: -5px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .ui {
+      width: 900px;
+      height: 596px;
+      padding: 16px 24px 16px;
+      gap: 12px;
+      transform-origin: 0 0;
+      transform: scale(var(--k, 1));
+    }
+  }
+
+  .ui-top {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+  }
+  .ui-route {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    color: var(--brand-text);
+  }
+  .ui-route svg {
+    margin-bottom: 8px;
+  }
+  .ui-k {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--fg-3);
+  }
+  .ui-city {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--fg);
+  }
+  @media (min-width: 1024px) {
+    .ui-city {
+      font-size: 44px;
+    }
+  }
+  .ui-meta {
+    display: flex;
+    gap: 20px;
+    margin: 0 0 2px;
+  }
+  .ui-meta dt {
+    font-size: 11px;
+    color: var(--fg-3);
+  }
+  .ui-meta dd {
+    margin: 0;
+    font-weight: 600;
+  }
+  .ui-filter {
+    margin: 0 0 4px auto;
+    padding: 4px 12px;
+    border: 1px solid color-mix(in srgb, var(--info) 60%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--info) 16%, transparent);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--info);
+  }
+
+  .ui-body {
+    display: grid;
+    gap: 12px;
+    min-height: 0;
+    flex: 1;
+  }
+  @container (min-width: 800px) {
+    .ui-body {
+      grid-template-columns: minmax(0, 1fr) 268px;
+      gap: 20px;
+    }
+  }
+
+  /* Fuselaje */
+  .ui-map {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .fus {
+    position: relative;
+    margin-inline: auto;
+    width: fit-content;
+    max-width: 100%;
+    padding: 36px calc(var(--aisle) * 0.8) 14px;
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    border-radius: 200px 200px 22px 22px / 110px 110px 22px 22px;
+    background: var(--panel);
+    transform-origin: 50% 0;
+    transition: transform 300ms var(--ease-out);
+  }
+  .fus-glow {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 200px;
+    height: 80px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at 50% 0, rgb(226 6 19 / 0.5), transparent 70%);
+    pointer-events: none;
+  }
+  .cab-label {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    text-align: center;
+  }
+  .row {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    gap: var(--gap);
+    margin-bottom: var(--gap);
+  }
+  .row-n {
+    position: absolute;
+    left: calc(var(--aisle) * -0.62);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--fg-3);
+    font-variant-numeric: tabular-nums;
+  }
+  .cabin-business .row-n {
+    left: calc(50% - 5.4 * var(--seat));
+  }
+  .aisle {
+    width: var(--aisle);
+    flex: none;
+  }
+  .galley {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    margin-bottom: 4px;
+    border-block: 1px dashed var(--line-strong);
+    justify-content: center;
+    font-size: 11px;
+    color: var(--fg-3);
+  }
+  .galley span {
+    padding-inline: 8px;
+    background: var(--panel);
+  }
+
+  .seat {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--seat);
+    height: var(--seat);
+    flex: none;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--fg-3);
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    transition:
+      opacity 200ms var(--ease-out),
+      background-color 200ms var(--ease-out),
+      border-color 200ms var(--ease-out);
+  }
+  .seat[data-occ] {
+    background: var(--panel-3);
+    color: var(--fg-2);
+  }
+  .seat :global(.badge) {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+  }
+  .seat .nps-badge,
+  .seat .done-badge {
+    display: none;
+  }
+  .seat[data-nps] {
+    border-color: var(--alert);
+  }
+  .seat[data-nps]::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border: 2px solid var(--alert);
+    border-radius: 13px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .seat[data-nps] .nps-badge {
+    display: block;
+  }
+  .ui[data-step='4'] .seat[data-nps]::after {
+    opacity: 1;
+    animation: nps-glow 1.8s ease-in-out infinite;
+  }
+  @keyframes nps-glow {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  .ui[data-attended] .seat[data-nps] {
+    border-color: #059669;
+  }
+  .ui[data-attended] .seat[data-nps]::after {
+    animation: none;
+    opacity: 0;
+  }
+  .ui[data-attended] .seat[data-nps] .nps-badge {
+    display: none;
+  }
+  .ui[data-attended] .seat[data-nps] .done-badge {
+    display: block;
+  }
+
+  /* Lente: coincidencias en azul cielo, el resto atenuado */
+  .ui[data-lens='inf'] .seat:not([data-l~='inf']),
+  .ui[data-lens='ssr'] .seat:not([data-l~='ssr']),
+  .ui[data-lens='wchr'] .seat:not([data-l~='wchr']) {
+    opacity: 0.4;
+  }
+  .ui[data-lens='inf'] .seat[data-l~='inf'],
+  .ui[data-lens='ssr'] .seat[data-l~='ssr'],
+  .ui[data-lens='wchr'] .seat[data-l~='wchr'] {
+    border-color: color-mix(in srgb, var(--info) 65%, transparent);
+    background: color-mix(in srgb, var(--info) 25%, transparent);
+    color: var(--info);
+    font-weight: 700;
+  }
+
+  /* Zoom a Business en el paso 2 */
+  .ui[data-step='2'] .fus {
+    transform: scale(1.16);
+  }
+
+  /* Panel por paso */
+  .ui-panel > section {
+    display: none;
+  }
+  .ui[data-step='1'] [data-p='1'],
+  .ui[data-step='2'] [data-p='2'],
+  .ui[data-step='3'] [data-p='3'],
+  .ui[data-step='4'] [data-p='4'] {
+    display: block;
+    animation: ui-in 200ms var(--ease-out);
+  }
+  @keyframes ui-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  .big {
+    margin: 4px 0 0;
+    font-family: var(--font-display);
+    font-size: 44px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .big span {
+    font-size: 16px;
+    letter-spacing: 0;
+    color: var(--fg-3);
+  }
+  .ui-sub {
+    margin: 4px 0 12px;
+    color: var(--fg-2);
+  }
+  .ui-note {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--fg-3);
+  }
+  .legend {
+    display: grid;
+    gap: 6px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--fg-2);
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sw {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    border: 1px solid var(--line-strong);
+    flex: none;
+  }
+  .sw-occ {
+    background: var(--panel-3);
+  }
+  .sw-match {
+    border-color: color-mix(in srgb, var(--info) 65%, transparent);
+    background: color-mix(in srgb, var(--info) 25%, transparent);
+  }
+  .sw-dim {
+    opacity: 0.4;
+    background: var(--panel-3);
+  }
+
+  .tiers {
+    display: grid;
+    gap: 10px;
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .tiers li {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+  }
+  .tiers strong {
+    display: block;
+    font-weight: 600;
+  }
+  .tiers span {
+    font-size: 12px;
+    color: var(--fg-3);
+  }
+  .tiers b {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .lenses {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .lens {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--fg);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-out),
+      border-color 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
+  }
+  .lens b {
+    font-variant-numeric: tabular-nums;
+    color: var(--fg-2);
+  }
+  .lens:active {
+    transform: scale(0.97);
+  }
+  .lens[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--info) 65%, transparent);
+    background: color-mix(in srgb, var(--info) 18%, transparent);
+    color: var(--info);
+  }
+
+  .nps {
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--alert) 55%, transparent);
+    border-radius: 14px;
+    background: var(--panel);
+  }
+  .nps-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 6px;
+  }
+  .primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--fg);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
+  }
+  .primary:active {
+    transform: scale(0.97);
+  }
+  .primary .lbl-on {
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .nps[data-done] .primary {
+    background: #059669;
+    color: #fff;
+  }
+  .nps[data-done] .lbl-off {
+    display: none;
+  }
+  .nps[data-done] .lbl-on {
+    display: inline-flex;
+  }
+  .nps[data-done] {
+    border-color: color-mix(in srgb, #059669 55%, transparent);
+  }
+
+  .comanda {
+    margin-top: 12px;
+  }
+  .meals {
+    display: grid;
+    gap: 6px;
+    margin: 6px 0 12px;
+    padding: 0;
+    list-style: none;
+  }
+  .meal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    background: var(--panel);
+    color: var(--fg);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-out),
+      border-color 150ms var(--ease-out);
+  }
+  .meal[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--ok) 70%, transparent);
+    background: color-mix(in srgb, var(--ok) 14%, transparent);
+  }
+  .rest {
+    flex: none;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--ok) 55%, transparent);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ok);
+  }
+  .kit {
+    display: grid;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .kit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .sizes {
+    display: flex;
+    gap: 4px;
+  }
+  .size {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--fg-2);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .size[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--ok) 70%, transparent);
+    background: color-mix(in srgb, var(--ok) 14%, transparent);
+    color: var(--ok);
+  }
+
+  /* En pantallas angostas cada paso muestra solo lo que cabe */
+  @container (max-width: 799px) {
+    .ui[data-step='4'] .ui-map {
+      display: none;
+    }
+    .ui[data-step='1'] .ui-panel,
+    .ui[data-step='2'] .ui-panel {
+      display: none;
+    }
+    .lenses {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .lens {
+      padding: 0 10px;
+    }
+    .legend {
+      display: none;
+    }
+    .ui-top {
+      gap: 4px 16px;
+    }
+    .ui-meta {
+      display: none;
+    }
+  }
+
+  /* Pie de paso */
+  .show-caption {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 56px 16px 16px;
+    background: linear-gradient(0deg, rgb(11 12 15 / 0.94) 0%, rgb(11 12 15 / 0.72) 55%, rgb(11 12 15 / 0) 100%);
+    color: var(--fg);
+  }
+  @media (min-width: 1024px) {
+    .show-caption {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 32px;
+      padding: 56px clamp(32px, 5vw, 88px) 20px;
+    }
+  }
+  .cap-main {
+    max-width: 640px;
+    min-width: 0;
+  }
+  .cap-step {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+  .cap-state {
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--ok) 55%, transparent);
+    border-radius: 999px;
+    font-style: normal;
+    color: var(--ok);
+  }
+  .cap-text h3 {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: clamp(20px, 2vw, 28px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .cap-text .cap-desc {
+    margin: 0;
+    font-size: 15px;
+    color: var(--fg-2);
+  }
+  .chip {
+    padding: 4px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-2);
+  }
+  .cap-side {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+  }
+  @media (min-width: 1024px) {
+    .cap-side {
+      justify-items: end;
+      max-width: 380px;
+    }
+  }
+  .cap-note {
+    display: none;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--fg-3);
+  }
+  @media (min-width: 640px) {
+    .cap-note {
+      display: block;
+    }
+  }
+  @media (min-width: 1024px) {
+    .cap-note {
+      text-align: right;
+    }
+  }
+  .cap-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .cap-nav button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-2);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
+  }
+  .cap-nav button:active {
+    transform: scale(0.97);
+  }
+  .cap-nav button[aria-current='step'] {
+    background: var(--fg);
+    border-color: var(--fg);
+    color: var(--ink);
+  }
+  .cap-nav-t {
+    display: none;
+  }
+  .cap-nav button[aria-current='step'] .cap-nav-t {
+    display: inline;
+  }
+  @media (min-width: 640px) {
+    .cap-nav-t {
+      display: inline;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fus,
+    .seat,
+    .lens,
+    .meal,
+    .primary,
+    .cap-nav button {
+      transition: none;
+    }
+    .ui-panel > section {
+      animation: none !important;
+    }
+    .ui[data-step='4'] .seat[data-nps]::after {
+      animation: none;
+      opacity: 1;
+    }
+  }
+</style>
+
+<script>
+  import '../../scripts/showcase.ts';
+</script>

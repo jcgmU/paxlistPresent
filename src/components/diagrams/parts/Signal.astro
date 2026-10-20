@@ -1,0 +1,18 @@
+---
+interface Props {
+  x: number;
+  y: number;
+  step?: number;
+}
+
+const { x, y, step = 0 } = Astro.props;
+const bars = [4, 8, 12, 16];
+---
+
+<g transform={`translate(${x} ${y})`}>
+  {
+    bars.map((h, i) => (
+      <rect x={i * 6} y={-h} width="3" height={h} rx="1" class="fill-fg-3 rv" style={`--i:${step + i}`} />
+    ))
+  }
+</g>

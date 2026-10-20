@@ -1,0 +1,317 @@
+---
+// Fuente: ARQUITECTURA_V3.md §14 (roadmap v3). Las fases se solapan y el plan no fija fecha de piloto.
+const phases = [
+  {
+    key: 'hoy',
+    name: 'Hoy',
+    state: 'Construido',
+    weeks: null as number | null,
+    span: 'Hecho',
+    text: 'App completa con datos de demostración: mapa, filtros, lealtad, NPS y comandas.',
+    flags: [] as string[],
+  },
+  {
+    key: 'f0',
+    name: 'Fase 0 · Descubrimiento',
+    state: 'Siguiente',
+    weeks: 2,
+    span: '2 semanas',
+    text: 'Confirmar el sistema de abordaje, la identidad con mTLS, el roster y la infraestructura. Sesión legal, borrador de la API y un manifiesto simulado.',
+    flags: ['A1', 'A6', 'A7'],
+  },
+  {
+    key: 'f1',
+    name: 'Fase 1 · Backend y fundamentos',
+    state: 'Diseñado',
+    weeks: 5,
+    span: '5 semanas',
+    text: 'BFF con autenticación, Delta Sync, reconcile y modelo en PostgreSQL, más el esquema local. El portal de catering corre en paralelo (3 semanas).',
+    flags: [],
+  },
+  {
+    key: 'f2',
+    name: 'Fase 2 · Plugin nativo P2P',
+    state: 'Diseñado',
+    weeks: 6,
+    span: '6 semanas',
+    text: 'Prototipo en Swift, pruebas en dispositivos reales y hardening con los certificados del MDM.',
+    flags: [],
+  },
+  {
+    key: 'f3',
+    name: 'Fase 3 · Lógica de negocio P2P',
+    state: 'Diseñado',
+    weeks: 5,
+    span: '5 semanas',
+    text: 'Relojes lógicos y CRDT, prioridad firmada entre iPads, Outbox y telemetría.',
+    flags: [],
+  },
+  {
+    key: 'f4',
+    name: 'Fase 4 · Seguridad y QA',
+    state: 'Diseñado',
+    weeks: null,
+    span: 'Se solapa con las fases 2 y 3',
+    text: 'SQLCipher y Keychain, mTLS con pinning, pruebas en iPads, y pruebas de migración y de carga.',
+    flags: [],
+  },
+  {
+    key: 'f5',
+    name: 'Fase 5 · Piloto BOG–MAD',
+    state: 'Condicionado',
+    weeks: 2,
+    span: '2 semanas',
+    text: 'Arranca solo con la DPIA aprobada. Una ruta, una tripulación y métricas reales.',
+    flags: ['A7'],
+  },
+];
+
+const blockers = [
+  { id: 'A1', t: 'Cómo llega el manifiesto', d: 'API del DCS (Amadeus) o mensajes PNL/ADL vía SITA. Sin esto no hay adaptador ni estimación firme de la Fase 1.' },
+  { id: 'A6', t: 'Identidad y dispositivos', d: 'Confirmar el IdP corporativo y que los certificados del MDM sirvan para mTLS. Toda la capa de acceso depende de esto.' },
+  { id: 'A7', t: 'Legal y DPIA', d: 'Sesión con Legal y el DPO sobre bases legales y retención, y DPIA de la ruta BOG–MAD. Es el gate del piloto.' },
+];
+const maxWeeks = 6;
+---
+
+<section class="road" aria-labelledby="road-title">
+  <div class="wrap">
+    <header>
+      <h2 id="road-title">Hoy es una demo funcional. Esto es lo que falta para volarla.</h2>
+      <p class="lead">
+        Las fases se solapan y el plan no fija una fecha de piloto. Las barras comparan duración, no calendario.
+      </p>
+    </header>
+
+    <ol class="phases">
+      {
+        phases.map((p) => (
+          <li class:list={['phase', `s-${p.key}`]}>
+            <div class="head">
+              <h3>{p.name}</h3>
+              <span class:list={['state', { ok: p.state === 'Construido', next: p.state === 'Siguiente' || p.state === 'Condicionado' }]}>{p.state}</span>
+            </div>
+            <p class="text">{p.text}</p>
+            <div class="meter">
+              {p.key === 'hoy' ? null : p.weeks !== null ? (
+                <span class="bar" style={`width:${(p.weeks / maxWeeks) * 100}%`} aria-hidden="true" />
+              ) : (
+                <span class="bar bar-flex" aria-hidden="true" />
+              )}
+              <span class="span">{p.span}</span>
+            </div>
+            {p.flags.length > 0 && (
+              <p class="flags">
+                {p.flags.map((f) => (
+                  <span class="flag">{f}</span>
+                ))}
+              </p>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="blockers">
+      <h3>Bloqueantes externos</h3>
+      <ul>
+        {
+          blockers.map((b) => (
+            <li>
+              <span class="flag">{b.id}</span>
+              <div>
+                <strong>{b.t}</strong>
+                <p>{b.d}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="foot">Resueltos A1 y A6 en la Fase 0, el resto es ejecutable tal como está planteado.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .road {
+    padding: clamp(80px, 14vh, 160px) 16px;
+    background: var(--ink);
+    color: var(--fg);
+  }
+  .wrap {
+    margin: 0 auto;
+    max-width: 1100px;
+  }
+  header {
+    margin-bottom: 56px;
+    max-width: 760px;
+  }
+  .eyebrow {
+    margin: 0 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+  h2 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4.2vw, 56px);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+  .lead {
+    margin: 0;
+    max-width: 60ch;
+    font-size: clamp(16px, 1.3vw, 19px);
+    line-height: 1.55;
+    color: var(--fg-2);
+  }
+  .phases {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+  .phase {
+    display: grid;
+    gap: 8px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 880px) {
+    .phase {
+      grid-template-columns: 280px minmax(0, 1fr) 260px;
+      gap: 8px 40px;
+      align-items: start;
+    }
+    .phase .flags {
+      grid-column: 2 / 4;
+    }
+  }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .state {
+    padding: 2px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-2);
+    white-space: nowrap;
+  }
+  .state.ok {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .state.next {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  .text {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--fg-2);
+  }
+  .meter {
+    display: grid;
+    gap: 6px;
+  }
+  .bar {
+    display: block;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--fg);
+  }
+  .bar-flex {
+    width: 100%;
+    height: 6px;
+    border: 1px dashed var(--fg-3);
+    background: transparent;
+  }
+  .span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .flags {
+    display: flex;
+    gap: 6px;
+    margin: 0;
+  }
+  .flag {
+    display: inline-block;
+    flex: none;
+    padding: 2px 10px;
+    border: 1px solid var(--warn);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--warn);
+  }
+
+  .blockers {
+    margin-top: 72px;
+  }
+  .blockers h3 {
+    margin-bottom: 24px;
+    font-size: 24px;
+  }
+  .blockers ul {
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 880px) {
+    .blockers ul {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .blockers li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+    border-radius: 20px;
+    background: var(--panel);
+  }
+  .blockers strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 16px;
+  }
+  .blockers p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fg-2);
+  }
+  .foot {
+    margin: 24px 0 0;
+    font-size: 14px;
+    color: var(--fg-3);
+  }
+</style>

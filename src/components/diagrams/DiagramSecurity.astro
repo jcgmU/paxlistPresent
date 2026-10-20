@@ -1,0 +1,193 @@
+---
+import Glyph from './parts/Glyph.astro';
+
+interface Props {
+  status?: string;
+}
+
+const { status = 'Diseñado' } = Astro.props;
+
+const layers = [
+  {
+    n: 1,
+    name: 'Dispositivo',
+    r: 200,
+    text: 'mTLS con certificados del MDM corporativo. SSL pinning con doble pin y kill-switch desde el MDM.',
+  },
+  {
+    n: 2,
+    name: 'Tripulante',
+    r: 150,
+    text: 'Autenticación OIDC contra el IdP corporativo, en tierra y antes del vuelo.',
+    flag: 'IdP y mTLS con MDM · por confirmar (A6)',
+  },
+  {
+    n: 3,
+    name: 'Vuelo',
+    r: 100,
+    text: 'Flight Session Token firmado. Cada acción sin conexión queda auditada por crewMemberId.',
+  },
+  {
+    n: 4,
+    name: 'Dato',
+    r: 52,
+    text: 'Cifrado en reposo con SQLCipher y Keychain, y purga obligatoria tras el vuelo, con tope de 24 h, para proteger los datos médicos SSR y los de los viajeros.',
+    flag: 'Gate del piloto · DPIA y sesión Legal/DPO (A7)',
+  },
+];
+
+const C = 220;
+const ticks = Array.from({ length: 48 }, (_, i) => {
+  const a = (i * 7.5 * Math.PI) / 180;
+  const long = i % 4 === 0;
+  const r1 = 206;
+  const r2 = long ? 214 : 211;
+  return `M${(C + r1 * Math.cos(a)).toFixed(1)} ${(C + r1 * Math.sin(a)).toFixed(1)}L${(C + r2 * Math.cos(a)).toFixed(1)} ${(C + r2 * Math.sin(a)).toFixed(1)}`;
+}).join('');
+
+const desc =
+  'Cuatro anillos concéntricos de seguridad, de afuera hacia adentro. Uno, dispositivo: mTLS con certificados del MDM corporativo, SSL pinning con doble pin y kill-switch. Dos, tripulante: autenticación OIDC contra el IdP corporativo en tierra. Tres, vuelo: Flight Session Token firmado, con auditoría por crewMemberId de cada acción sin conexión. Cuatro, dato: cifrado en reposo con SQLCipher y Keychain, y purga obligatoria después del vuelo con un tope de 24 horas, para proteger datos médicos SSR y de viajeros bajo cumplimiento legal y DPIA.';
+---
+
+<figure class="dg dg-sec" data-dg>
+  <div class="sec">
+    <svg viewBox="0 0 440 440" role="img" aria-labelledby="dg-sec-t dg-sec-d" class="sec-svg">
+      <title id="dg-sec-t">Cuatro capas concéntricas de seguridad: dispositivo, tripulante, vuelo y dato</title>
+      <desc id="dg-sec-d">{desc}</desc>
+
+      <path d={ticks} class="ln-hair" />
+
+      {
+        layers.map((l, i) => (
+          <g class={`rv rv-s ring ring-${l.n}`} style={`--i:${i * 2}`}>
+            <circle cx={C} cy={C} r={l.r} class:list={['n', i % 2 === 1 && 'n-2']} />
+          </g>
+        ))
+      }
+
+      {
+        layers.slice(0, 3).map((l, i) => (
+          <text x={C} y={C - l.r + 28} class="t-micro t-mid rv" style={`--i:${i * 2 + 1}`}>
+            {l.n} · {l.name}
+          </text>
+        ))
+      }
+
+      {
+        (['device', 'person', 'key'] as const).map((g, i) => {
+          const r = layers[i].r - 25;
+          return (
+            <g class="rv" style={`--i:${i * 2 + 1}`}>
+              <Glyph name={g} x={C - r} y={C} />
+              <Glyph name={g} x={C + r} y={C} />
+            </g>
+          );
+        })
+      }
+
+      <g class="rv" style="--i:6">
+        <g transform={`translate(${C} ${C - 8}) scale(1.7)`}>
+          <Glyph name="shield" x={0} y={0} />
+        </g>
+        <text x={C} y={C + 34} class="t-micro t-mid">4 · Dato</text>
+      </g>
+    </svg>
+
+    <ol class="sec-list">
+      {
+        layers.map((l, i) => (
+          <li class="rv" style={`--i:${i + 3}`} data-ring={l.n}>
+            <span class="sec-n" aria-hidden="true">{l.n}</span>
+            <div>
+              <h3>{l.name}</h3>
+              <p>{l.text}</p>
+              {l.flag && <span class="dg-chip dg-chip--warn">{l.flag}</span>}
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <figcaption>
+    <span class="dg-chip">{status}</span>
+    <span>
+      Un dato solo se alcanza desde un iPad corporativo, de una persona autenticada y dentro de un vuelo vigente, y
+      desaparece del iPad al terminar.
+    </span>
+  </figcaption>
+</figure>
+
+<style>
+  .sec {
+    display: grid;
+    gap: 32px;
+    align-items: center;
+  }
+  .sec-svg {
+    max-width: 440px;
+    margin-inline: auto;
+  }
+  @container (min-width: 880px) {
+    .sec {
+      grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+      gap: 64px;
+    }
+  }
+
+  .sec-list {
+    display: grid;
+    gap: 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .sec-list li {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .sec-n {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-2);
+  }
+  .sec-list h3 {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+  .sec-list p {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--fg-2);
+    text-wrap: pretty;
+  }
+
+  .ring circle {
+    transition: stroke 150ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .sec:has(li[data-ring='1']:hover) .ring-1 circle,
+    .sec:has(li[data-ring='2']:hover) .ring-2 circle,
+    .sec:has(li[data-ring='3']:hover) .ring-3 circle,
+    .sec:has(li[data-ring='4']:hover) .ring-4 circle {
+      stroke: var(--brand-text);
+    }
+  }
+</style>
+
+<script>
+  import '../../scripts/dg-reveal.ts';
+</script>

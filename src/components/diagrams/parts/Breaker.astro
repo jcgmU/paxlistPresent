@@ -1,0 +1,23 @@
+---
+interface Props {
+  cx: number;
+  cy: number;
+  state?: 'ok' | 'open';
+}
+
+const { cx, cy, state = 'ok' } = Astro.props;
+const open = state === 'open';
+---
+
+<g transform={`translate(${cx} ${cy})`}>
+  <rect x="-19" y="-11" width="38" height="22" class="fill-ink"></rect>
+  <circle cx="-14" cy="0" r="3.5" class:list={['gl', 'fill-ink', { 'gl-warn': open }]}></circle>
+  <circle cx="14" cy="0" r="3.5" class:list={['gl', 'fill-ink', { 'gl-warn': open }]}></circle>
+  {
+    open ? (
+      <line x1="-11" y1="-1" x2="8" y2="-10" class="gl gl-warn" />
+    ) : (
+      <line x1="-11" y1="0" x2="11" y2="0" class="gl" />
+    )
+  }
+</g>

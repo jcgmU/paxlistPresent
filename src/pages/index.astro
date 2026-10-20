@@ -1,16 +1,21 @@
 ---
-import '../styles/global.css';
+import Base from '../layouts/Base.astro';
+import ScrollHero from '../components/hero/ScrollHero.astro';
+import Showcase from '../components/showcase/Showcase.astro';
+import LightBridge from '../components/sections/LightBridge.astro';
+import DataLane from '../components/sections/DataLane.astro';
+import Roadmap from '../components/sections/Roadmap.astro';
+import Closing from '../components/sections/Closing.astro';
 ---
 
-<html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Avianca SeatMap Pro</title>
-	</head>
-	<body class="bg-neutral-950 text-white">
-		<h1 class="p-8 text-4xl font-medium">Avianca SeatMap Pro</h1>
-	</body>
-</html>
+<Base
+  title="Avianca SeatMap Pro"
+  description="Apoyo a bordo para la tripulación de cabina: el manifiesto convertido en un mapa de asientos que se entiende de un vistazo, también sin conexión."
+>
+  <ScrollHero />
+  <Showcase />
+  <LightBridge />
+  <DataLane />
+  <Roadmap />
+  <Closing />
+</Base>
