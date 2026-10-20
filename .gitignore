@@ -31,3 +31,5 @@ pnpm-debug.log*
 .claude/
 skills-lock.json
 docs/BRIEF_GEMINI.md
+.vercel
+.env*
