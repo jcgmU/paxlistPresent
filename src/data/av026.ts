@@ -1,4 +1,4 @@
-// Subconjunto de FLIGHT_AV026 de la app (datos de demostración): Business 1–5 y Plus 8–9.
+// Subconjunto de FLIGHT_AV026 de la app (datos de demostración): Business 1–5, Plus 8–9 y Economy 12 y 14.
 export type Tier = 'magno' | 'diamond' | 'gold';
 
 export interface SeatData {
@@ -16,7 +16,7 @@ export interface RowData {
 }
 
 export interface CabinData {
-  cls: 'business' | 'plus';
+  cls: 'business' | 'plus' | 'economy';
   label: string;
   rows: RowData[];
 }
@@ -74,6 +74,26 @@ const plusOccupied: Raw = {
   '9K': {},
 };
 
+const economyOccupied: Raw = {
+  '12A': {},
+  '12C': {},
+  '12D': {},
+  '12E': {},
+  '12F': {},
+  '12G': {},
+  '12K': {},
+  '14A': {},
+  '14B': {},
+  '14C': {},
+  '14D': {},
+  '14E': { codes: ['PETC'] },
+  '14F': {},
+  '14G': {},
+  '14K': {},
+};
+
+const WIDE = ['A', 'B', 'C', 'aisle', 'D', 'E', 'F', 'aisle', 'G', 'J', 'K'];
+
 export const AV026 = {
   flightNumber: 'AV026',
   origin: 'BOG',
@@ -82,10 +102,17 @@ export const AV026 = {
   service: 'Insignia',
   cabins: [
     { cls: 'business', label: 'Business', rows: build(['A', 'aisle', 'D', 'E', 'aisle', 'K'], [1, 2, 3, 4, 5], businessOccupied) },
-    { cls: 'plus', label: 'Plus', rows: build(['A', 'B', 'C', 'aisle', 'D', 'E', 'F', 'aisle', 'G', 'J', 'K'], [8, 9], plusOccupied) },
+    { cls: 'plus', label: 'Plus', rows: build(WIDE, [8, 9], plusOccupied) },
+    { cls: 'economy', label: 'Economy', rows: build(WIDE, [12, 14], economyOccupied) },
   ] as CabinData[],
   nps: { seat: '3K', comment: 'Vuelo anterior con retraso de 4 horas sin compensación.' },
-  // Menú Insignia · almuerzo, plato fuerte (stock inicial de la demo)
+  // Vuelos de la demo
+  flights: [
+    { fn: 'AV210', route: 'BOG → JFK', aircraft: 'A320', dep: '07:20', service: 'Americas' },
+    { fn: 'AV026', route: 'BOG → MAD', aircraft: 'B787-8', dep: '13:48', service: 'Insignia' },
+    { fn: 'AV120', route: 'BOG → LHR', aircraft: 'B787-8', dep: '23:25', service: 'Insignia' },
+  ],
+  // Menú Insignia · almuerzo, plato fuerte. En Insignia cada pasillo (A–D y E–K) tiene su propia bolsa.
   meals: [
     { name: 'Lomo de res al vino tinto', stock: 4 },
     { name: 'Salmón en costra de hierbas', stock: 4 },
@@ -106,6 +133,7 @@ export const stats = {
   inf: allSeats.filter((s) => s.codes.includes('INF')).length,
   ssr: allSeats.filter((s) => s.codes.length > 0).length,
   wchr: allSeats.filter((s) => s.codes.includes('WCHR')).length,
+  empty: allSeats.filter((s) => !s.occupied).length,
 };
 
 export function lensList(seat: SeatData): string {

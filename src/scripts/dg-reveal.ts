@@ -1,15 +1,16 @@
 const figures = document.querySelectorAll<HTMLElement>('.dg[data-dg]');
 
 if ('IntersectionObserver' in window) {
+  // data-play: entrada única. data-live: el flujo se anima solo mientras el diagrama está visible.
   const io = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        entry.target.setAttribute('data-play', '');
-        io.unobserve(entry.target);
+        const el = entry.target;
+        if (entry.isIntersecting) el.setAttribute('data-play', '');
+        el.toggleAttribute('data-live', entry.isIntersecting);
       }
     },
-    { threshold: 0.3 },
+    { threshold: 0.2 },
   );
 
   figures.forEach((figure) => {

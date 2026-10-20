@@ -1,8 +1,8 @@
 ---
 const decisions = [
-  { n: '1', t: 'Canal del manifiesto', d: 'API del DCS de Amadeus o mensajes PNL/ADL vía SITA. Destraba el adaptador y la estimación de la Fase 1.' },
-  { n: '2', t: 'Vuelo piloto BOG–MAD', d: 'La ruta, la tripulación que lo prueba y cuándo arranca, una vez aprobada la DPIA.' },
-  { n: '3', t: 'Accesos y sesión legal', d: 'Acceso a LifeMiles, Salesforce y roster, el IdP con mTLS, y la sesión con Legal y el DPO.' },
+  { n: '1', t: 'Fuente del manifiesto', d: 'API del DCS de Amadeus o mensajes PNL/ADL vía SITA (A1). Destraba el adaptador y la estimación de la Fase 1.' },
+  { n: '2', t: 'Vuelo piloto y tripulación', d: 'La ruta BOG–MAD, la tripulación que lo prueba y cuándo arranca, una vez aprobada la DPIA.' },
+  { n: '3', t: 'Accesos e inicio de la sesión legal', d: 'Acceso a LifeMiles, Salesforce y rostering, y arranque de la sesión con Legal y el DPO (A7).' },
 ];
 ---
 
@@ -32,8 +32,7 @@ const decisions = [
     </a>
 
     <p class="legal">
-      La demo usa datos de ejemplo. El backend, el modo sin conexión y la sincronización entre iPads están diseñados, no
-      implementados.
+      La demo usa datos de ejemplo. El backend y el modo sin conexión están diseñados, no implementados.
     </p>
   </div>
 </section>
@@ -62,7 +61,7 @@ const decisions = [
     font-size: clamp(40px, 6.4vw, 96px);
     font-weight: 500;
     line-height: 1;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.04em;
   }
   .lead {
     margin: 0 0 48px;

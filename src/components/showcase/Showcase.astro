@@ -14,10 +14,16 @@ function seatLabel(s: SeatData) {
 }
 
 const steps = [
-  { n: 1, nav: 'Mapa', title: 'Mapa y cabinas', text: 'El fuselaje del vuelo AV026 con su cabina Business, fila por fila.', origin: [] as string[] },
-  { n: 2, nav: 'Lealtad', title: 'Lealtad LifeMiles', text: 'Magno, Diamond y Gold se leen sin abrir nada: el color marca estatus y el icono lo confirma.', origin: ['Origen: LifeMiles CRM'] },
-  { n: 3, nav: 'Filtros', title: 'Filtros del mapa', text: 'INF, SSR y WCHR iluminan los asientos que coinciden y atenúan el resto.', origin: ['Origen: GDS / PNR'] },
-  { n: 4, nav: 'Servicio', title: 'Servicio y comandas', text: 'Recuperar un mal vuelo anterior y tomar la comanda sin contar platos.', origin: ['Origen: Salesforce NPS', 'Origen: Catering'] },
+  { n: 1, nav: 'Mapa', title: 'Toda la cabina, de un vistazo.', text: 'El fuselaje real del avión, con Business, Plus y Economy, para cualquiera de los vuelos de la demo.', origin: [] as string[] },
+  { n: 2, nav: 'Lealtad', title: 'Sabes quién viaja antes de llegar a su fila.', text: 'Magno, Diamond y Gold se leen sin abrir nada: el color marca estatus y el icono lo confirma.', origin: ['Origen: LifeMiles CRM'] },
+  { n: 3, nav: 'Lentes', title: '¿Dónde están los infantes? Tócalo.', text: 'Sillas vacías, INF, SSR y WCHR iluminan los asientos que coinciden y atenúan el resto.', origin: ['Origen: GDS / PNR'] },
+  { n: 4, nav: 'Servicio', title: 'Un mal vuelo anterior no tiene por qué repetirse.', text: 'Y la comanda se toma sin contar platos: cada pasillo ve cuánto le queda.', origin: ['Origen: Salesforce NPS', 'Origen: Catering'] },
+];
+const lensCards = [
+  { key: 'empty', label: 'Sillas vacías', n: stats.empty },
+  { key: 'inf', label: 'INF', n: stats.inf },
+  { key: 'ssr', label: 'SSR', n: stats.ssr },
+  { key: 'wchr', label: 'WCHR', n: stats.wchr },
 ];
 ---
 
@@ -55,7 +61,7 @@ const steps = [
               {
                 AV026.cabins.map((cab, ci) => (
                   <div class={`cabin cabin-${cab.cls}`}>
-                    {ci > 0 && (
+                    {ci === 1 && (
                       <div class="galley" aria-hidden="true">
                         <span>Galley · puertas L2 / R2</span>
                       </div>
@@ -99,14 +105,32 @@ const steps = [
 
           <aside class="ui-panel" aria-label="Panel de estadísticas">
             <section data-p="1">
-              <p class="ui-k">Cabina Business</p>
-              <p class="big">{stats.businessOccupied}<span> de {stats.businessSeats}</span></p>
-              <p class="ui-sub">asientos ocupados en 5 filas</p>
-              <ul class="legend">
-                <li><span class="sw sw-free"></span>Libre</li>
-                <li><span class="sw sw-occ"></span>Ocupado</li>
+              <p class="ui-k">Vuelos de la demo</p>
+              <ul class="flights">
+                {
+                  AV026.flights.map((f) => (
+                    <li>
+                      {f.fn === AV026.flightNumber ? (
+                        <div class="flight is-current" aria-current="true">
+                          <span class="flight-fn">{f.fn}</span>
+                          <span class="flight-route">{f.route}</span>
+                          <span class="flight-meta">{f.aircraft} · {f.service}</span>
+                          <span class="flight-tag">En pantalla</span>
+                        </div>
+                      ) : (
+                        <a class="flight" href="https://pax-list-angular.vercel.app" target="_blank" rel="noopener noreferrer">
+                          <span class="flight-fn">{f.fn}</span>
+                          <span class="flight-route">{f.route}</span>
+                          <span class="flight-meta">{f.aircraft} · {f.service}</span>
+                          <span class="flight-tag">Abrir en la demo<span class="sr-only"> (pestaña nueva)</span></span>
+                        </a>
+                      )}
+                    </li>
+                  ))
+                }
               </ul>
-              <p class="ui-note">Debajo del galley continúa la cabina Plus.</p>
+              <p class="ui-sub">Business: {stats.businessOccupied} de {stats.businessSeats} asientos ocupados.</p>
+              <p class="ui-note">Extracto del mapa: Business completa y las primeras filas de Plus y Economy.</p>
             </section>
 
             <section data-p="2">
@@ -131,15 +155,24 @@ const steps = [
             </section>
 
             <section data-p="3">
-              <p class="ui-k">Filtros del mapa</p>
+              <p class="ui-k">Estadísticas · toca una tarjeta</p>
               <div class="lenses" role="group" aria-label="Filtros del mapa">
-                <button type="button" class="lens" data-lens-btn="inf" aria-pressed="false"><span>INF</span><b>{stats.inf}</b></button>
-                <button type="button" class="lens" data-lens-btn="ssr" aria-pressed="false"><span>SSR</span><b>{stats.ssr}</b></button>
-                <button type="button" class="lens" data-lens-btn="wchr" aria-pressed="false"><span>WCHR</span><b>{stats.wchr}</b></button>
+                {
+                  lensCards.map((c) => (
+                    <button type="button" class:list={['lens', `lens-${c.key}`]} data-lens-btn={c.key} aria-pressed="false">
+                      <span class="lens-n">{c.n}</span>
+                      <span class="lens-l">{c.label}</span>
+                    </button>
+                  ))
+                }
               </div>
-              <ul class="legend" data-lens-legend>
+              <ul class="legend legend-match" data-lens-legend>
                 <li><span class="sw sw-match"></span><span data-legend-match>Coincide</span></li>
                 <li><span class="sw sw-dim"></span>Otros</li>
+              </ul>
+              <ul class="legend legend-occ">
+                <li><span class="sw sw-empty"></span>Libre</li>
+                <li><span class="sw sw-taken"></span>Ocupado</li>
               </ul>
             </section>
 
@@ -153,14 +186,17 @@ const steps = [
                 </button>
               </div>
               <div class="comanda">
-                <p class="ui-k">Comanda Business · plato fuerte</p>
+                <p class="ui-k">Comanda Business · asiento {AV026.nps.seat} · pasillo E–K</p>
                 <ul class="meals" role="group" aria-label="Plato fuerte">
                   {
                     AV026.meals.map((m, i) => (
                       <li>
                         <button type="button" class="meal" data-meal={i} data-stock={m.stock} aria-pressed="false">
                           <span class="meal-name">{m.name}</span>
-                          <span class="rest"><span data-rest>{m.stock}</span> rest.</span>
+                          <span class="zones">
+                            <span class="rest"><span class="zone">A–D</span> {m.stock}</span>
+                            <span class="rest"><span class="zone">E–K</span> <span data-rest>{m.stock}</span> rest.</span>
+                          </span>
                         </button>
                       </li>
                     ))
@@ -193,15 +229,11 @@ const steps = [
         {
           steps.map((s) => (
             <div class="cap-text" data-cap={s.n} hidden={s.n !== 1}>
-              <p class="cap-step">
-                <span><span data-cap-n>{s.n}</span> / 4</span>
-                <em class="cap-state">Construido</em>
-                {s.origin.map((o) => (
-                  <span class="chip">{o}</span>
-                ))}
-              </p>
               <h3>{s.title}</h3>
               <p class="cap-desc">{s.text}</p>
+              {s.origin.length > 0 && (
+                <p class="cap-source">Fuente del dato: {s.origin.map((o) => o.replace('Origen: ', '')).join(' y ')}</p>
+              )}
             </div>
           ))
         }
@@ -217,38 +249,58 @@ const steps = [
             ))
           }
         </nav>
-        <p class="cap-note">Datos de demostración. Los orígenes indican de dónde vendrá cada dato en el diseño del backend.</p>
+        <p class="cap-note"><span class="status status-ok">Construido</span> con datos de demostración. La fuente indica de dónde vendrá cada dato en el diseño del backend.</p>
       </div>
     </div>
   </div>
 </section>
 
+<noscript>
+  <style>
+    .show {
+      margin-top: 0 !important;
+    }
+    .show-pin {
+      visibility: visible !important;
+    }
+    .show-backdrop {
+      opacity: 1 !important;
+    }
+  </style>
+</noscript>
+
 <style>
+  /* Se monta sobre la última pantalla del hero: así la pantalla negra del iPad pasa sin corte al showcase. */
   .show {
     position: relative;
-    height: 520svh;
-    background: #0b0c0f;
+    z-index: 2;
+    height: 560svh;
+    margin-top: -100svh;
   }
   .show-pin {
     position: sticky;
     top: 0;
     height: 100svh;
     overflow: hidden;
+    visibility: hidden;
+  }
+  .show-pin[data-live] {
+    visibility: visible;
+    background: #000;
   }
   .show-backdrop {
     position: absolute;
     inset: 0;
+    opacity: 0;
   }
 
   /* Pantalla del iPad. En escritorio JS la ajusta al rectángulo de la pantalla de foto-3. */
   .show-device {
     position: absolute;
-    top: 76px;
-    transform-origin: 50% 0;
-    transition: transform 200ms var(--ease-out);
-    left: 50%;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
     width: min(calc(100% - 32px), 560px);
-    transform: translateX(-50%);
     overflow: hidden;
     border: 10px solid #1b1d22;
     border-radius: 30px;
@@ -257,11 +309,8 @@ const steps = [
   }
   @media (min-width: 1024px) {
     .show-device {
-      top: var(--dy, 0);
-      left: var(--dx, 0);
       width: var(--dw, 900px);
       height: var(--dh, 596px);
-      transform: none;
       border: 0;
       border-radius: var(--dr, 20px);
     }
@@ -291,6 +340,10 @@ const steps = [
       --seat: clamp(22px, calc((100cqi - 50px) / 11.92), 34px);
       --gap: calc(var(--seat) * 0.14);
       --aisle: calc(var(--seat) * 0.5);
+    }
+    .cabin-plus .row-n,
+    .cabin-economy .row-n {
+      display: none;
     }
     .cabin-business {
       --seat: min(34px, calc((100cqi - 60px) / 6.7));
@@ -553,7 +606,7 @@ const steps = [
     border-color: color-mix(in srgb, var(--info) 65%, transparent);
     background: color-mix(in srgb, var(--info) 25%, transparent);
     color: var(--info);
-    font-weight: 700;
+    font-weight: 600;
   }
 
   /* Zoom a Business en el paso 2 */
@@ -836,11 +889,22 @@ const steps = [
     .ui[data-step='2'] .ui-panel {
       display: none;
     }
-    .lenses {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .ui .lenses {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
     }
-    .lens {
-      padding: 0 10px;
+    .ui .lens {
+      min-height: 56px;
+      padding: 6px 8px;
+    }
+    .ui .lens-n {
+      font-size: 20px;
+    }
+    .ui .lens-l {
+      font-size: 11px;
+    }
+    .flights {
+      display: none;
     }
     .legend {
       display: none;
@@ -851,6 +915,142 @@ const steps = [
     .ui-meta {
       display: none;
     }
+  }
+
+
+  /* Ajuste del mapa: en los pasos 1 y 3 el fuselaje completo cabe en la pantalla */
+  .ui[data-step='1'] .fus,
+  .ui[data-step='3'] .fus {
+    transform: scale(var(--fit, 1));
+  }
+
+  /* Vuelos de la demo */
+  .flights {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0 14px;
+    padding: 0;
+    list-style: none;
+  }
+  .flight {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 10px;
+    align-items: baseline;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    background: var(--panel);
+    color: var(--fg);
+    text-decoration: none;
+    transition: border-color 150ms var(--ease-out), background-color 150ms var(--ease-out);
+  }
+  .flight.is-current {
+    border-color: var(--fg-3);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    a.flight:hover {
+      background: var(--panel-2);
+    }
+  }
+  .flight-fn {
+    grid-row: span 2;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .flight-route {
+    font-weight: 600;
+  }
+  .flight-meta,
+  .flight-tag {
+    grid-column: 2;
+    font-size: 12px;
+    color: var(--fg-3);
+  }
+  .flight.is-current .flight-tag {
+    color: var(--ok);
+  }
+
+  /* Tarjetas de estadística que filtran el mapa */
+  .lenses {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lens {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+    min-height: 80px;
+    padding: 10px 14px;
+    border-radius: 16px;
+  }
+  .lens-n {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .lens-l {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fg-2);
+  }
+  .lens[aria-pressed='true'] .lens-l {
+    color: inherit;
+  }
+  .lens-empty[aria-pressed='true'] {
+    border-color: color-mix(in srgb, var(--ok) 65%, transparent);
+    background: color-mix(in srgb, var(--ok) 16%, transparent);
+    color: var(--ok);
+  }
+  .legend-occ,
+  .legend-match {
+    display: none;
+  }
+  .ui[data-lens='empty'] .legend-occ,
+  .ui[data-lens='inf'] .legend-match,
+  .ui[data-lens='ssr'] .legend-match,
+  .ui[data-lens='wchr'] .legend-match {
+    display: grid;
+  }
+  .sw-empty {
+    border-color: color-mix(in srgb, var(--ok) 65%, transparent);
+    background: color-mix(in srgb, var(--ok) 25%, transparent);
+  }
+  .sw-taken {
+    border-color: color-mix(in srgb, var(--warn) 65%, transparent);
+    background: color-mix(in srgb, var(--warn) 25%, transparent);
+  }
+  .ui[data-lens='empty'] .seat:not([data-occ]) {
+    border-color: color-mix(in srgb, var(--ok) 65%, transparent);
+    background: color-mix(in srgb, var(--ok) 25%, transparent);
+    color: var(--ok);
+  }
+  .ui[data-lens='empty'] .seat[data-occ] {
+    border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+    background: color-mix(in srgb, var(--warn) 20%, transparent);
+  }
+
+  /* Stock por pasillo */
+  .meal {
+    min-height: 44px;
+  }
+  .zones {
+    display: flex;
+    flex: none;
+    gap: 4px;
+  }
+  .zone {
+    color: var(--fg-3);
+    font-weight: 500;
+  }
+  .meal[aria-pressed='true'] .zone {
+    color: inherit;
   }
 
   /* Pie de paso */
@@ -922,6 +1122,11 @@ const steps = [
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--fg-2);
+  }
+  .cap-source {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--fg-3);
   }
   .cap-side {
     display: grid;
@@ -995,7 +1200,13 @@ const steps = [
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .show-device,
+    .show {
+      margin-top: 0;
+    }
+    .show-pin {
+      visibility: visible;
+      background: #0b0c0f;
+    }
     .fus,
     .seat,
     .lens,

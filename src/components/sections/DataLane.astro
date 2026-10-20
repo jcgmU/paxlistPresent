@@ -4,51 +4,71 @@ import DiagramFlightOffline from '../diagrams/DiagramFlightOffline.astro';
 import DiagramLandingReconcile from '../diagrams/DiagramLandingReconcile.astro';
 import DiagramSecurity from '../diagrams/DiagramSecurity.astro';
 
-const acts = [
+type Act = {
+  id: string;
+  n: string;
+  kicker: string;
+  title: string;
+  lead: string;
+  tags: { t: string; warn?: boolean }[];
+  details: [string, string][];
+  note?: [string, string];
+};
+
+const acts: Act[] = [
   {
     id: 'acto-v',
     n: 'Acto V',
     kicker: 'En tierra, con conexión',
-    title: 'La tripulante ve un mapa. Detrás hay seis sistemas.',
-    lead: 'Un servicio intermedio, el BFF, consulta en paralelo el sistema de abordaje, las reservas, LifeMiles, Salesforce, catering y el roster, y entrega un solo paquete pequeño por vuelo. Si una fuente falla, el manifiesto sale igual.',
+    title: 'En tierra, seis sistemas consolidados y stock en tiempo real.',
+    lead: 'Durante la ventana de 10 a 15 minutos en plataforma, cada iPad descarga el vuelo completo en un paquete de menos de 200 KB. Mientras hay conexión, el inventario de platos se mantiene sincronizado en vivo entre las tablets.',
+    tags: [{ t: 'Diseñado' }, { t: 'Por confirmar: A1', warn: true }],
     details: [
-      ['BFF en NestJS + PostgreSQL', 'Combina las respuestas de los seis sistemas y guarda en caché el resultado de cada vuelo: una sola consulta por vuelo a los sistemas legacy.'],
-      ['Circuit Breaker por adaptador', 'Cada fuente tiene su breaker. Con uno abierto, el BFF omite esa fuente y entrega una respuesta parcial en lugar de bloquearse.'],
-      ['Delta Sync menor a 200 KB', 'Descarga incremental con brotli dentro de la ventana de 10 a 15 minutos en tierra. Un contador por vuelo y marcas de borrado para quitar a quien no aborda.'],
+      ['ManifestAggregatorService', 'Consulta en paralelo el DCS, el GDS, LifeMiles, Salesforce, catering y el roster, y combina sus respuestas en un solo manifiesto por vuelo.'],
+      ['Circuit Breaker por adaptador', 'Si una fuente falla, su breaker se abre y el BFF entrega una respuesta parcial en lugar de bloquearse.'],
+      ['Caché en PostgreSQL', 'Una consulta por vuelo a los sistemas legacy, guardada por vuelo y fecha. Las tablets leen la caché, no los sistemas de origen.'],
+      ['Delta Sync con Brotli', 'Descarga incremental con un contador por vuelo y marcas de borrado para quien no aborda. Paquete menor a 200 KB, sin fotos.'],
     ],
-    blocker: ['A1', 'Bloqueante: cómo llega el manifiesto. API del DCS (Amadeus) o mensajes PNL/ADL vía SITA. Define el adaptador y la estimación de la Fase 1.'],
+    note: ['A1', 'Bloqueante: cómo llega el manifiesto. API del DCS de Amadeus o mensajes PNL/ADL vía SITA. Define el adaptador y la estimación de la Fase 1.'],
   },
   {
     id: 'acto-vi',
     n: 'Acto VI',
     kicker: 'En vuelo, sin red',
-    title: 'Diez horas sin internet. La cabina no se entera.',
-    lead: 'Al embarcar, cada iPad guarda el vuelo completo en una base de datos cifrada local. En el aire lee y escribe solo ahí, y los tres iPads comparten los cambios entre sí.',
+    title: 'Diez horas sin internet. La operación continúa intacta.',
+    lead: 'Cada iPad trabaja con su propia copia cifrada del vuelo, por zona de cabina. Las comandas y los cierres de alertas NPS se guardan localmente en una cola de salida hasta aterrizar.',
+    tags: [{ t: 'Diseñado' }],
     details: [
-      ['SQLite + SQLCipher', 'Base de datos nativa y cifrada en el iPad, con la llave en el Keychain. Sin PowerSync ni RxDB: el patrón es descargar, operar local y subir.'],
+      ['@capacitor-community/sqlite + SQLCipher', 'Base de datos nativa y cifrada en el iPad, con la llave en el Keychain. El patrón es descargar, operar en local y subir al aterrizar.'],
       ['Flight Session Token offline', 'JWT firmado, válido hasta la hora estimada de llegada más 6 horas, que la app valida sin red con la clave pública embebida. Cada acción queda atada a crewMemberId.'],
-      ['Sincronización P2P', 'Wi-Fi local en el A320 y Multipeer en el B787. El orden lo dictan relojes lógicos híbridos y las comandas se combinan sin conflictos. Por confirmar: aislamiento de clientes del Wi-Fi del A320 (A4) y access point del B787 (A5).'],
+      ['Transactional Outbox por zona', 'Purser, pasillo A–D y pasillo E–K escriben cada cambio en su cola local junto con el dato, para subirlo en tierra.'],
+    ],
+    note: [
+      'P2P',
+      'Nota de arquitectura: la sincronización entre iPads en vuelo (Multipeer con relojes HLC y CRDT) está diseñada en ARQUITECTURA_V3.md como fase evolutiva opcional. Se prioriza salir a producción sin depender de la red del avión (A4 y A5 por confirmar).',
     ],
   },
   {
     id: 'acto-vii',
     n: 'Acto VII',
     kicker: 'Al aterrizar y recuperar señal',
-    title: 'Todo cuadra, y se sube una sola vez.',
-    lead: 'Cada iPad sube lo que originó. Si tres suben la misma comanda, el servidor la reconoce y queda una sola. Lo que falla se aparta para revisión, y al final el iPad borra los datos del vuelo.',
+    title: 'Al aterrizar y recuperar señal, todo cuadra.',
+    lead: 'Al encender los iPads con red en destino, cada uno vacía su Outbox. Si tres envían la misma comanda, queda un solo registro. Lo conciliado sale a Catering y a Salesforce, y el iPad borra los datos del vuelo.',
+    tags: [{ t: 'Diseñado' }, { t: 'Por confirmar: A3', warn: true }],
     details: [
-      ['Transactional Outbox', 'Cada cambio se escribe en una cola local junto con el dato. Las réplicas recibidas por P2P no entran a la cola: cada iPad sube solo lo que originó.'],
-      ['Idempotencia en dos niveles', 'transactionId evita reprocesar un mismo envío ante reintentos HTTP. entityId identifica el hecho de negocio, de modo que varios envíos convergen en un solo registro.'],
-      ['sync_dead_letter', 'POST /sync/reconcile responde por transacción: aceptada, duplicada o rechazada. Lo rechazado o sin reintentos queda en la cola para revisión.'],
+      ['Transactional Outbox', 'Cada iPad sube solo lo que originó, contra POST /sync/reconcile, que responde por transacción: aceptada, duplicada o rechazada.'],
+      ['Idempotencia en dos niveles', 'transactionId evita reprocesar un envío ante reintentos HTTP. entityId identifica el hecho de negocio: tres recibidos convergen en un registro.'],
+      ['sync_dead_letter', 'Lo que falla la validación o agota los reintentos queda apartado para revisión, sin perderse.'],
     ],
-    blocker: ['A3', 'Por definir: el proceso de cierre de casos NPS en Salesforce, que habilita el worker de salida hacia el CRM.'],
+    note: ['A3', 'Por definir: el proceso de cierre de casos NPS en Salesforce, que habilita el envío de los casos atendidos al CRM.'],
   },
   {
     id: 'acto-viii',
     n: 'Acto VIII',
     kicker: 'Confianza y privacidad',
     title: 'Datos de salud y de viajeros, tratados como lo que son.',
-    lead: 'El manifiesto incluye nombres, viajero frecuente y solicitudes médicas. Solo entran iPads corporativos, la tripulante inicia sesión con su cuenta de Avianca y los datos desaparecen al terminar.',
+    lead: 'Cuatro capas, de afuera hacia adentro: solo iPads corporativos, una tripulante autenticada, un vuelo vigente y datos cifrados que se borran al terminar.',
+    tags: [{ t: 'Diseñado' }, { t: 'Por confirmar: A6', warn: true }, { t: 'Gate legal: A7, DPIA BOG–MAD', warn: true }],
     details: [],
   },
 ];
@@ -60,7 +80,7 @@ const acts = [
     <header class="lane-head">
       <h2 id="lane-title">El mismo vuelo, visto desde el dato.</h2>
       <p class="lead">
-        Lo que sigue está diseñado, no implementado. Cada pieza lleva su estado y lo que falta por confirmar.
+        Lo que sigue está diseñado, no implementado. Cada pieza dice su estado y lo que falta por confirmar.
       </p>
     </header>
 
@@ -71,10 +91,15 @@ const acts = [
             <h3 id={`${a.id}-t`}>{a.title}</h3>
             <p class="act-k">{a.n} · {a.kicker}</p>
             <p class="lead">{a.lead}</p>
+            <p class="tags">
+              {a.tags.map((t) => (
+                <span class:list={['status', t.warn ? 'status-warn' : '']}>{t.t}</span>
+              ))}
+            </p>
           </header>
 
           {a.id === 'acto-v' && <DiagramEmbark />}
-          {a.id === 'acto-vi' && <DiagramFlightOffline p2p />}
+          {a.id === 'acto-vi' && <DiagramFlightOffline />}
           {a.id === 'acto-vii' && <DiagramLandingReconcile />}
           {a.id === 'acto-viii' && <DiagramSecurity />}
 
@@ -92,10 +117,10 @@ const acts = [
                   </div>
                 ))}
               </dl>
-              {a.blocker && (
+              {a.note && (
                 <p class="blocker">
-                  <span class="tag">{a.blocker[0]}</span>
-                  {a.blocker[1]}
+                  <strong>{a.note[0]}</strong>
+                  {a.note[1]}
                 </p>
               )}
             </details>
@@ -122,6 +147,23 @@ const acts = [
     margin-bottom: clamp(64px, 10vh, 120px);
     max-width: 760px;
   }
+  h2 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: clamp(36px, 5vw, 72px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+  }
+  h3 {
+    margin: 0 0 12px;
+    max-width: 26ch;
+    font-family: var(--font-display);
+    font-size: clamp(28px, 3.4vw, 48px);
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+  }
   .act-k {
     margin: 0 0 16px;
     font-size: 12px;
@@ -130,29 +172,18 @@ const acts = [
     text-transform: uppercase;
     color: var(--fg-3);
   }
-  h2 {
-    margin: 0 0 16px;
-    font-family: var(--font-display);
-    font-size: clamp(36px, 5vw, 72px);
-    font-weight: 500;
-    line-height: 1.02;
-    letter-spacing: -0.03em;
-  }
-  h3 {
-    margin: 0 0 12px;
-    max-width: 24ch;
-    font-family: var(--font-display);
-    font-size: clamp(28px, 3.4vw, 48px);
-    font-weight: 500;
-    line-height: 1.08;
-    letter-spacing: -0.025em;
-  }
   .lead {
     margin: 0;
     max-width: 62ch;
     font-size: clamp(16px, 1.3vw, 19px);
     line-height: 1.55;
     color: var(--fg-2);
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin: 20px 0 0;
   }
   .act {
     margin-bottom: clamp(96px, 14vh, 160px);
@@ -193,7 +224,7 @@ const acts = [
   }
   @media (min-width: 880px) {
     .ti dl {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 32px;
     }
   }
@@ -203,6 +234,7 @@ const acts = [
     font-size: 18px;
     font-weight: 500;
     color: var(--fg);
+    overflow-wrap: anywhere;
   }
   .ti dd {
     margin: 0;
@@ -211,25 +243,21 @@ const acts = [
     color: var(--fg-2);
   }
   .blocker {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 16px;
     margin: 24px 0 8px;
-    padding: 14px 16px;
-    border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
-    border-radius: 14px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
     color: var(--fg-2);
   }
-  .tag {
-    flex: none;
-    padding: 2px 10px;
-    border: 1px solid var(--warn);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+  .blocker strong {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
     color: var(--warn);
   }
   @media (prefers-reduced-motion: reduce) {

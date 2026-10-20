@@ -1,13 +1,13 @@
 ---
-// Fuente: ARQUITECTURA_V3.md §14 (roadmap v3). Las fases se solapan y el plan no fija fecha de piloto.
+// Ruta acordada para la presentación. La sincronización P2P en vuelo (fases 2 y 3 de ARQUITECTURA_V3.md) queda como módulo opcional después del piloto.
 const phases = [
   {
     key: 'hoy',
-    name: 'Hoy',
+    name: 'Hecho',
     state: 'Construido',
     weeks: null as number | null,
-    span: 'Hecho',
-    text: 'App completa con datos de demostración: mapa, filtros, lealtad, NPS y comandas.',
+    span: 'Disponible hoy',
+    text: 'App interactiva con datos de demostración: mapa, lentes, lealtad, NPS y comandas.',
     flags: [] as string[],
   },
   {
@@ -16,60 +16,51 @@ const phases = [
     state: 'Siguiente',
     weeks: 2,
     span: '2 semanas',
-    text: 'Confirmar el sistema de abordaje, la identidad con mTLS, el roster y la infraestructura. Sesión legal, borrador de la API y un manifiesto simulado.',
-    flags: ['A1', 'A6', 'A7'],
+    text: 'Origen del manifiesto, IdP con mTLS, roster e infraestructura, y la sesión con Legal para la DPIA.',
+    flags: ['A1', 'A6', 'A8', 'A9', 'A7'],
   },
   {
     key: 'f1',
-    name: 'Fase 1 · Backend y fundamentos',
+    name: 'Fase 1 · Backend y sincronización en tierra',
     state: 'Diseñado',
     weeks: 5,
     span: '5 semanas',
-    text: 'BFF con autenticación, Delta Sync, reconcile y modelo en PostgreSQL, más el esquema local. El portal de catering corre en paralelo (3 semanas).',
+    text: 'BFF en NestJS con PostgreSQL, Delta Sync, sincronización en tierra, SQLite con Outbox en el iPad, y el portal de catering en paralelo (3 semanas).',
     flags: [],
   },
   {
     key: 'f2',
-    name: 'Fase 2 · Plugin nativo P2P',
+    name: 'Fase 2 · Seguridad y QA',
     state: 'Diseñado',
-    weeks: 6,
-    span: '6 semanas',
-    text: 'Prototipo en Swift, pruebas en dispositivos reales y hardening con los certificados del MDM.',
+    weeks: 3.5,
+    span: '3 a 4 semanas, se solapa con la Fase 1',
+    text: 'SQLCipher con Keychain, mTLS con pinning, y pruebas en iPads reales.',
     flags: [],
   },
   {
     key: 'f3',
-    name: 'Fase 3 · Lógica de negocio P2P',
-    state: 'Diseñado',
-    weeks: 5,
-    span: '5 semanas',
-    text: 'Relojes lógicos y CRDT, prioridad firmada entre iPads, Outbox y telemetría.',
-    flags: [],
-  },
-  {
-    key: 'f4',
-    name: 'Fase 4 · Seguridad y QA',
-    state: 'Diseñado',
-    weeks: null,
-    span: 'Se solapa con las fases 2 y 3',
-    text: 'SQLCipher y Keychain, mTLS con pinning, pruebas en iPads, y pruebas de migración y de carga.',
-    flags: [],
-  },
-  {
-    key: 'f5',
-    name: 'Fase 5 · Piloto BOG–MAD',
+    name: 'Fase 3 · Piloto BOG–MAD',
     state: 'Condicionado',
     weeks: 2,
     span: '2 semanas',
-    text: 'Arranca solo con la DPIA aprobada. Una ruta, una tripulación y métricas reales.',
+    text: 'Arranca solo con la DPIA aprobada: una ruta, una tripulación y métricas reales.',
     flags: ['A7'],
+  },
+  {
+    key: 'p2p',
+    name: 'Después del piloto · P2P en vuelo',
+    state: 'Opcional',
+    weeks: null,
+    span: 'Módulo evolutivo',
+    text: 'Sincronización entre iPads durante el vuelo con Multipeer, relojes HLC y CRDT, según ARQUITECTURA_V3.md. Depende de la red del avión (A4 y A5).',
+    flags: ['A4', 'A5'],
   },
 ];
 
 const blockers = [
-  { id: 'A1', t: 'Cómo llega el manifiesto', d: 'API del DCS (Amadeus) o mensajes PNL/ADL vía SITA. Sin esto no hay adaptador ni estimación firme de la Fase 1.' },
+  { id: 'A1', t: 'Cómo llega el manifiesto', d: 'API del DCS de Amadeus o mensajes PNL/ADL vía SITA. Sin esto no hay adaptador ni estimación firme de la Fase 1.' },
   { id: 'A6', t: 'Identidad y dispositivos', d: 'Confirmar el IdP corporativo y que los certificados del MDM sirvan para mTLS. Toda la capa de acceso depende de esto.' },
-  { id: 'A7', t: 'Legal y DPIA', d: 'Sesión con Legal y el DPO sobre bases legales y retención, y DPIA de la ruta BOG–MAD. Es el gate del piloto.' },
+  { id: 'A7', t: 'Legal y DPIA', d: 'Sesión con Legal y el DPO sobre bases legales y retención, y DPIA de la ruta BOG–MAD. Es el gate del piloto.' },
 ];
 const maxWeeks = 6;
 ---
@@ -79,7 +70,7 @@ const maxWeeks = 6;
     <header>
       <h2 id="road-title">Hoy es una demo funcional. Esto es lo que falta para volarla.</h2>
       <p class="lead">
-        Las fases se solapan y el plan no fija una fecha de piloto. Las barras comparan duración, no calendario.
+        Las fases de seguridad y desarrollo se solapan, y la fecha del piloto depende de los bloqueantes. Las barras comparan duración, no calendario.
       </p>
     </header>
 
@@ -89,11 +80,11 @@ const maxWeeks = 6;
           <li class:list={['phase', `s-${p.key}`]}>
             <div class="head">
               <h3>{p.name}</h3>
-              <span class:list={['state', { ok: p.state === 'Construido', next: p.state === 'Siguiente' || p.state === 'Condicionado' }]}>{p.state}</span>
+              <span class:list={['status', { 'status-ok': p.state === 'Construido', 'status-warn': p.state === 'Condicionado' }]}>{p.state}</span>
             </div>
             <p class="text">{p.text}</p>
             <div class="meter">
-              {p.key === 'hoy' ? null : p.weeks !== null ? (
+              {p.key === 'hoy' || p.key === 'p2p' ? null : p.weeks !== null ? (
                 <span class="bar" style={`width:${(p.weeks / maxWeeks) * 100}%`} aria-hidden="true" />
               ) : (
                 <span class="bar bar-flex" aria-hidden="true" />
@@ -102,9 +93,7 @@ const maxWeeks = 6;
             </div>
             {p.flags.length > 0 && (
               <p class="flags">
-                {p.flags.map((f) => (
-                  <span class="flag">{f}</span>
-                ))}
+                Depende de <strong>{p.flags.join(', ')}</strong>
               </p>
             )}
           </li>
@@ -114,19 +103,19 @@ const maxWeeks = 6;
 
     <div class="blockers">
       <h3>Bloqueantes externos</h3>
-      <ul>
+      <dl>
         {
           blockers.map((b) => (
-            <li>
-              <span class="flag">{b.id}</span>
-              <div>
-                <strong>{b.t}</strong>
-                <p>{b.d}</p>
-              </div>
-            </li>
+            <div>
+              <dt>
+                <span class="code">{b.id}</span>
+                <span class="name">{b.t}</span>
+              </dt>
+              <dd>{b.d}</dd>
+            </div>
           ))
         }
-      </ul>
+      </dl>
       <p class="foot">Resueltos A1 y A6 en la Fase 0, el resto es ejecutable tal como está planteado.</p>
     </div>
   </div>
@@ -160,7 +149,7 @@ const maxWeeks = 6;
     font-size: clamp(30px, 4.2vw, 56px);
     font-weight: 500;
     line-height: 1.05;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
   }
   .lead {
     margin: 0;
@@ -221,6 +210,9 @@ const maxWeeks = 6;
     border-color: var(--ok);
     color: var(--ok);
   }
+  .state.soft {
+    border-style: dashed;
+  }
   .state.next {
     border-color: var(--warn);
     color: var(--warn);
@@ -254,59 +246,60 @@ const maxWeeks = 6;
     font-variant-numeric: tabular-nums;
   }
   .flags {
-    display: flex;
-    gap: 6px;
     margin: 0;
+    font-size: 13px;
+    color: var(--fg-3);
   }
-  .flag {
-    display: inline-block;
-    flex: none;
-    padding: 2px 10px;
-    border: 1px solid var(--warn);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+  .flags strong {
+    font-weight: 600;
     color: var(--warn);
   }
 
   .blockers {
-    margin-top: 72px;
+    margin-top: 80px;
   }
   .blockers h3 {
-    margin-bottom: 24px;
+    margin-bottom: 8px;
     font-size: 24px;
   }
-  .blockers ul {
-    display: grid;
-    gap: 16px;
+  .blockers dl {
     margin: 0;
-    padding: 0;
-    list-style: none;
+  }
+  .blockers dl > div {
+    display: grid;
+    gap: 6px 40px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
   }
   @media (min-width: 880px) {
-    .blockers ul {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+    .blockers dl > div {
+      grid-template-columns: 320px minmax(0, 1fr);
+      align-items: baseline;
     }
   }
-  .blockers li {
+  .blockers dt {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 20px;
-    border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
-    border-radius: 20px;
-    background: var(--panel);
+    align-items: baseline;
+    gap: 16px;
   }
-  .blockers strong {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 16px;
+  .code {
+    min-width: 2.2em;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--warn);
   }
-  .blockers p {
+  .name {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .blockers dd {
     margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
+    max-width: 62ch;
+    font-size: 15px;
+    line-height: 1.55;
     color: var(--fg-2);
   }
   .foot {

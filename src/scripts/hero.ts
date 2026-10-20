@@ -4,10 +4,7 @@ const media = section?.querySelector<HTMLElement>('[data-media]');
 const copy = section?.querySelector<HTMLElement>('[data-copy]');
 const hint = section?.querySelector<HTMLElement>('[data-hint]');
 const canvas = section?.querySelector<HTMLCanvasElement>('[data-canvas]');
-const portal = section?.querySelector<HTMLElement>('[data-portal]');
-const studio = section?.querySelector<HTMLElement>('[data-studio]');
-const studioFull = section?.querySelector<HTMLElement>('[data-studio-full]');
-const device = document.querySelector<HTMLElement>('[data-device]');
+const blackout = section?.querySelector<HTMLElement>('[data-black]');
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -17,8 +14,10 @@ const FRAME_VIDEO = { w: 1920, h: 1080, x0: 761, y0: 474, x1: 1012, y1: 727 };
 const FRAME_SEQ = { w: 540, h: 960, x0: 93.3, y0: 421.3, x1: 316.4, y1: 646.2 };
 const SEQ_COUNT = 97;
 const seqUrl = (i: number) => `/frames/f_${String(i + 1).padStart(3, '0')}.webp`;
-// Reparto del recorrido: el video avanza hasta SCRUB_END y el resto es la entrada al iPad.
-const SCRUB_END = 0.78;
+// Reparto del recorrido: pausa de lectura hasta SCRUB_START, video hasta SCRUB_END y luego la entrada al iPad.
+const SCRUB_START = 0.2;
+const SCRUB_END = 0.75;
+const scrub = (p: number) => clamp((p - SCRUB_START) / (SCRUB_END - SCRUB_START));
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -27,7 +26,7 @@ const smooth = (a: number, b: number, v: number) => {
   return t * t * (3 - 2 * t);
 };
 
-let geo = { vw: 0, vh: 0, cx: 0, cy: 0, rw: 0, rh: 0, tw: 0, th: 0, tcx: 0, tcy: 0 };
+let geo = { vw: 0, vh: 0, cx: 0, cy: 0, rw: 0, rh: 0 };
 let framesMode = false;
 let FRAME = FRAME_VIDEO;
 const seq: (HTMLImageElement | null)[] = new Array(SEQ_COUNT).fill(null);
@@ -110,22 +109,7 @@ function measure() {
   const y0 = oy + FRAME.y0 * k;
   const rw = (FRAME.x1 - FRAME.x0) * k;
   const rh = (FRAME.y1 - FRAME.y0) * k;
-  // Destino del panel: el viewport en escritorio; en teléfono, el marco del iPad donde empieza el showcase.
-  const fitK = framesMode && device ? Number(device.dataset.fit ?? 1) : 1;
-  const dw = framesMode && device ? device.offsetWidth * fitK : vw;
-  const dh = framesMode && device ? device.offsetHeight * fitK : vh;
-  geo = {
-    vw,
-    vh,
-    cx: x0 + rw / 2,
-    cy: y0 + rh / 2,
-    rw,
-    rh,
-    tw: dw,
-    th: dh,
-    tcx: vw / 2,
-    tcy: framesMode && device ? 76 + dh / 2 : vh / 2,
-  };
+  geo = { vw, vh, cx: x0 + rw / 2, cy: y0 + rh / 2, rw, rh };
   if (media) media.style.transformOrigin = `${geo.cx}px ${geo.cy}px`;
 }
 
@@ -144,10 +128,10 @@ function unlockVideo() {
 
 function render() {
   raf = 0;
-  if (!section || !video || !media || !copy || !portal || !studio) return;
+  if (!section || !video || !media || !copy || !blackout) return;
   const p = progress();
 
-  const copyOpacity = 1 - smooth(0.07, 0.22, p);
+  const copyOpacity = 1 - smooth(0.16, 0.24, p);
   copy.style.opacity = String(copyOpacity);
   copy.style.transform = `translate3d(0, ${(1 - copyOpacity) * -28}px, 0)`;
   copy.style.visibility = copyOpacity < 0.01 ? 'hidden' : 'visible';
@@ -155,34 +139,24 @@ function render() {
 
   let busy = false;
   if (framesMode) {
-    drawFrame(Math.round(clamp(p / SCRUB_END) * (SEQ_COUNT - 1)));
+    drawFrame(Math.round(scrub(p) * (SEQ_COUNT - 1)));
   } else {
-    if (video.duration) target = clamp(p / SCRUB_END) * video.duration;
+    if (video.duration) target = scrub(p) * video.duration;
     const diff = target - current;
     current = Math.abs(diff) < 1 / 48 ? target : current + diff * 0.5;
     if (!video.seeking && Math.abs(video.currentTime - current) > 1 / 120) video.currentTime = current;
     busy = current !== target || Math.abs(video.currentTime - current) > 1 / 120;
   }
 
+  // Entrada a la pantalla: acercamiento continuo hasta que la pantalla negra del iPad llena el viewport.
   const z = clamp((p - SCRUB_END) / (1 - SCRUB_END));
-  const zEase = z * z * (3 - 2 * z);
-  const s = 1 + 1.1 * zEase;
-  media.style.transform = z > 0 ? `scale(${s})` : '';
-
-  const e = z * z * z;
-  const w = lerp(geo.rw * s, geo.tw, e);
-  const h = lerp(geo.rh * s, geo.th, e);
-  const cx = lerp(geo.cx, geo.tcx, e);
-  const cy = lerp(geo.cy, geo.tcy, e);
-  const sx = w / geo.vw;
-  const sy = h / geo.vh;
-  const endRadius = framesMode ? 20 : 0;
-  const radius = lerp(12, endRadius, smooth(0.85, 1, z));
-  portal.style.opacity = String(smooth(0, 0.22, z));
-  portal.style.transform = `translate3d(${cx - geo.vw / 2}px, ${cy - geo.vh / 2}px, 0) scale(${sx}, ${sy})`;
-  portal.style.borderRadius = `${radius / sx}px / ${radius / sy}px`;
-  studio.style.opacity = framesMode ? '0' : String(smooth(0.55, 0.95, z));
-  if (studioFull) studioFull.style.opacity = framesMode ? String(smooth(0.15, 0.7, z)) : '0';
+  const e = z * z * (3 - 2 * z);
+  const sEnd = Math.max(geo.vw / geo.rw, geo.vh / geo.rh) * 1.08;
+  const s = Math.pow(sEnd, e);
+  const tx = (geo.vw / 2 - geo.cx) * e;
+  const ty = (geo.vh / 2 - geo.cy) * e;
+  media.style.transform = z > 0 ? `translate3d(${tx}px, ${ty}px, 0) scale(${s})` : '';
+  blackout.style.opacity = String(smooth(0.72, 1, z));
 
   if (busy) schedule();
 }

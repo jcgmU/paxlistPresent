@@ -21,22 +21,16 @@
     </div>
     <div class="hero-scrim" aria-hidden="true"></div>
 
-    <div class="hero-copy" data-copy>
-      <h1 id="hero-title">Toda la cabina, de un vistazo.</h1>
+    <div class="hero-copy glass-panel" data-copy>
+      <h1 id="hero-title">Hoy, la información llega como una tabla.</h1>
       <p class="hero-sub">Mismos datos. Otra forma de leerlos.</p>
-      <p class="hero-chip"><span aria-hidden="true">[</span> Construido <span aria-hidden="true">]</span></p>
       <p class="hero-hint" data-hint>
         Desliza para recorrer el vuelo
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
       </p>
     </div>
 
-    <div class="hero-studio studio-bg" data-studio-full aria-hidden="true"></div>
-
-    <div class="hero-portal" data-portal aria-hidden="true">
-      <div class="portal-black"></div>
-      <div class="portal-studio studio-bg" data-studio></div>
-    </div>
+    <div class="hero-black" data-black aria-hidden="true"></div>
 
     <p class="sr-only">
       Ilustración: una tripulante de cabina en la cabina Business baja un manifiesto en papel y levanta un iPad con la pantalla en negro.
@@ -55,7 +49,7 @@
 <style>
   .hero {
     position: relative;
-    height: 520svh;
+    height: 350svh;
     background: #0b0c0f;
   }
   .hero-pin {
@@ -109,15 +103,17 @@
     position: absolute;
     left: 16px;
     right: 16px;
-    bottom: clamp(48px, 9vh, 120px);
+    bottom: clamp(32px, 7vh, 96px);
     max-width: 640px;
+    padding: 24px;
     color: #f5f5f6;
   }
   @media (min-width: 900px) {
     .hero-copy {
       left: clamp(32px, 5vw, 88px);
       right: auto;
-      max-width: 38vw;
+      max-width: min(40vw, 560px);
+      padding: 32px;
     }
   }
   .hero-chip {
@@ -142,7 +138,7 @@
     font-size: clamp(38px, 4.4vw, 76px);
     font-weight: 500;
     line-height: 1.02;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
   }
   .hero-sub {
     margin: 0;
@@ -162,30 +158,12 @@
     color: #9da3af;
   }
 
-  .hero-studio {
+  .hero-black {
     position: absolute;
     inset: 0;
+    background: #000;
     opacity: 0;
     pointer-events: none;
-  }
-  .hero-portal {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
-    transform-origin: 50% 50%;
-    overflow: hidden;
-  }
-  .portal-black,
-  .portal-studio {
-    position: absolute;
-    inset: 0;
-  }
-  .portal-black {
-    background: #050506;
-  }
-  .portal-studio {
-    opacity: 0;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -198,8 +176,7 @@
     }
     .hero-video,
     .hero-canvas,
-    .hero-studio,
-    .hero-portal,
+    .hero-black,
     .hero-hint {
       display: none !important;
     }
