@@ -17,6 +17,7 @@ const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 let step = 1;
 let manual: { lens?: Lens; attended?: boolean; meal?: number | null } = {};
 let raf = 0;
+let lastLaid = 0;
 
 const stage = section?.querySelector<HTMLElement>('[data-stage]');
 const backdrop = section?.querySelector<HTMLElement>('.show-backdrop');
@@ -38,9 +39,27 @@ function layout() {
   const vw = innerWidth;
   const vh = innerHeight;
   if (desktop.matches) {
-    const k = Math.max(vw / IMG.w, vh / IMG.h);
+    // El iPad (filas 100–810 de foto-3) debe quedar entre el encabezado y el pie del paso, con aire debajo.
+    const capH = caption ? caption.offsetHeight - 56 : 0;
+    const top = 76;
+    const bottom = vh - capH - 32;
+    let k = Math.max(vw / IMG.w, vh / IMG.h);
+    let oy = (vh - IMG.h * k) / 2;
+    const over = oy + 810 * k - bottom;
+    if (over > 0) oy -= Math.min(over, oy + 100 * k - top);
+    if (oy + 810 * k > bottom) {
+      k = (bottom - top) / 710;
+      oy = top - 100 * k;
+    }
     const ox = (vw - IMG.w * k) / 2;
-    const oy = (vh - IMG.h * k) / 2;
+    if (backdrop) {
+      backdrop.style.backgroundSize = `${IMG.w * k}px ${IMG.h * k}px`;
+      backdrop.style.backgroundPosition = `${ox}px ${oy}px`;
+      // Si la foto queda más chica que la ventana, sus bordes se funden con el fondo en lugar de marcar un corte.
+      const mask = `radial-gradient(ellipse ${(IMG.w * k) / 2}px ${(IMG.h * k) / 2}px at ${ox + (IMG.w * k) / 2}px ${oy + (IMG.h * k) / 2}px, #000 72%, transparent 100%)`;
+      backdrop.style.setProperty('mask-image', mask);
+      backdrop.style.setProperty('-webkit-mask-image', mask);
+    }
     device.style.setProperty('--dw', `${IMG.sw * k}px`);
     device.style.setProperty('--dh', `${IMG.sh * k}px`);
     device.style.setProperty('--dr', `${IMG.r * k}px`);
@@ -51,6 +70,10 @@ function layout() {
     geo = { w0: IMG.sw * k, h0: IMG.sh * k, x: ox + IMG.x * k, y: oy + IMG.y * k, kF: 1 };
   } else {
     ['--dw', '--dh', '--dr'].forEach((p) => device.style.removeProperty(p));
+    backdrop?.style.removeProperty('background-size');
+    backdrop?.style.removeProperty('background-position');
+    backdrop?.style.removeProperty('mask-image');
+    backdrop?.style.removeProperty('-webkit-mask-image');
     ui.style.removeProperty('--k');
     ui.style.removeProperty('--fit');
     // En teléfonos el marco se reduce lo necesario para que no choque con el pie del paso.
@@ -147,7 +170,10 @@ function render() {
   section.querySelectorAll<HTMLElement>('[data-cap]').forEach((el) => {
     el.hidden = Number(el.dataset.cap) !== step;
   });
-  if (!desktop.matches) layout();
+  if (next !== lastLaid) {
+    lastLaid = next;
+    layout();
+  }
   const n = section.querySelector('[data-cap-n]');
   if (n) n.textContent = String(step);
   section.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) => {

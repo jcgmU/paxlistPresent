@@ -231,9 +231,11 @@ const lensCards = [
             <div class="cap-text" data-cap={s.n} hidden={s.n !== 1}>
               <h3>{s.title}</h3>
               <p class="cap-desc">{s.text}</p>
-              {s.origin.length > 0 && (
-                <p class="cap-source">Fuente del dato: {s.origin.map((o) => o.replace('Origen: ', '')).join(' y ')}</p>
-              )}
+              <p class="cap-meta">
+                <span>Paso {s.n} de 4</span>
+                <span class="status status-ok">Construido</span>
+                {s.origin.length > 0 && <span>Fuente: {s.origin.map((o) => o.replace('Origen: ', '')).join(' y ')}</span>}
+              </p>
             </div>
           ))
         }
@@ -249,7 +251,7 @@ const lensCards = [
             ))
           }
         </nav>
-        <p class="cap-note"><span class="status status-ok">Construido</span> con datos de demostración. La fuente indica de dónde vendrá cada dato en el diseño del backend.</p>
+        <p class="cap-note">Datos de demostración. La fuente indica de dónde vendrá cada dato en el diseño del backend.</p>
       </div>
     </div>
   </div>
@@ -1123,10 +1125,26 @@ const lensCards = [
     text-transform: uppercase;
     color: var(--fg-2);
   }
-  .cap-source {
-    margin: 6px 0 0;
-    font-size: 13px;
-    color: var(--fg-3);
+  .cap-meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    margin: 12px 0 0;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: rgb(11 12 15 / 0.5);
+    backdrop-filter: blur(18px);
+    font-size: 12px;
+    color: var(--fg-2);
+  }
+  .cap-meta > span {
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+  .cap-meta > span + span {
+    border-left: 1px solid var(--line);
+  }
+  .cap-meta .status {
+    font-size: 12px;
   }
   .cap-side {
     display: grid;
