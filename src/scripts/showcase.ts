@@ -18,14 +18,32 @@ let step = 1;
 let manual: { lens?: Lens; attended?: boolean; meal?: number | null } = {};
 let raf = 0;
 
+// En teléfonos el marco se reduce lo necesario para que no choque con el pie del paso.
+function fit() {
+  if (!device || !section) return;
+  if (desktop.matches) {
+    device.style.transform = '';
+    device.removeAttribute('data-fit');
+    return;
+  }
+  const caption = section.querySelector<HTMLElement>('.show-caption');
+  if (!caption) return;
+  const avail = caption.offsetTop + 56 - 76 - 8;
+  const k = clamp(avail / device.offsetHeight, 0.62, 1);
+  device.style.transform = `translateX(-50%) scale(${k})`;
+  device.dataset.fit = String(k);
+}
+
 function layout() {
   if (!device || !ui) return;
   const props = ['--dx', '--dy', '--dw', '--dh', '--dr'];
   if (!desktop.matches) {
     props.forEach((p) => device.style.removeProperty(p));
     ui.style.removeProperty('--k');
+    fit();
     return;
   }
+  fit();
   const vw = innerWidth;
   const vh = innerHeight;
   const k = Math.max(vw / IMG.w, vh / IMG.h);
@@ -104,6 +122,7 @@ function render() {
   section.querySelectorAll<HTMLElement>('[data-cap]').forEach((el) => {
     el.hidden = Number(el.dataset.cap) !== step;
   });
+  fit();
   const n = section.querySelector('[data-cap-n]');
   if (n) n.textContent = String(step);
   section.querySelectorAll<HTMLButtonElement>('[data-go]').forEach((b) => {
